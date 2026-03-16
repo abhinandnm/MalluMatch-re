@@ -58,7 +58,7 @@ export default function ChatRoom() {
     socketRef.current.on('match_found', ({ message }) => {
       setIsConnected(true);
       setAuraActive(true);
-      setStatus("You're now chatting with a random stranger! Say hi.");
+      setStatus("Partner found! Respect each other and have fun.");
       setMessages([]);
       createPeerConnection();
       

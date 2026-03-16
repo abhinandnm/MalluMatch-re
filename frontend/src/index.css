@@ -45,12 +45,18 @@
   padding: 0;
 }
 
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+}
+
 body {
   font-family: var(--font-main);
   background-color: var(--color-bg);
   color: var(--color-text);
-  line-height: 1.5;
-  min-height: 100vh;
+  line-height: 1.6;
+  min-height: 100dvh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
