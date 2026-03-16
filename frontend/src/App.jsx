@@ -10,7 +10,7 @@ import AnnouncementBanner from './components/AnnouncementBanner';
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-function App() {
+const AppWrapper = () => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const socketRef = useRef(null);
@@ -38,20 +38,33 @@ function App() {
         />
       )}
 
-      <div className={`app-container ${!ageVerified ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>
-        <Navbar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/chat" element={<ChatRoom />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/admin-portal" element={<AdminPortal />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AppContent 
+        ageVerified={ageVerified} 
+        announcement={announcement} 
+        setAnnouncement={setAnnouncement} 
+      />
     </Router>
   );
-}
+};
 
-export default App;
+const AppContent = ({ ageVerified, announcement, setAnnouncement }) => {
+  const location = useLocation();
+  const isChatPage = location.pathname === '/chat';
+
+  return (
+    <div className={`app-container ${!ageVerified ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>
+      <Navbar />
+      <main className={`main-content ${isChatPage ? 'no-padding' : ''}`}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/chat" element={<ChatRoom />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/admin-portal" element={<AdminPortal />} />
+        </Routes>
+      </main>
+      {!isChatPage && <Footer />}
+    </div>
+  );
+};
+
+export default AppWrapper;
