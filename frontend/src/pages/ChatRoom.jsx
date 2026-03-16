@@ -49,6 +49,16 @@ export default function ChatRoom() {
   // Audio Assets
   const matchSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
   const disconnectSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2367/2367-preview.mp3'));
+  const sendSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'));
+  const tapSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'));
+  const reportSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2361/2361-preview.mp3'));
+  const alertSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2356/2356-preview.mp3'));
+
+  const playSfx = (audioRef) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    audioRef.current.play().catch(e => console.log("Audio blocked."));
+  };
 
   useEffect(() => {
     socketRef.current = io('https://mallumatch-api.onrender.com');
@@ -82,7 +92,7 @@ export default function ChatRoom() {
       createPeerConnection();
       
       // Play Premium Match Sound
-      matchSound.current.play().catch(e => console.log("Audio play blocked by browser."));
+      playSfx(matchSound);
       
       // Reset aura after effect duration
       setTimeout(() => setAuraActive(false), 5000);
@@ -94,7 +104,7 @@ export default function ChatRoom() {
       cleanupPeerConnection();
       
       // Play Premium Disconnect Sound
-      disconnectSound.current.play().catch(e => console.log("Audio play blocked by browser."));
+      playSfx(disconnectSound);
     });
 
     socketRef.current.on('initiate_webrtc', async () => {
@@ -143,11 +153,13 @@ export default function ChatRoom() {
     });
 
     socketRef.current.on('kicked', ({ message }) => {
+      playSfx(alertSound);
       alert(message || 'You have been kicked by an admin.');
       navigate('/');
     });
 
     socketRef.current.on('banned', ({ message }) => {
+      playSfx(alertSound);
       alert(message || 'Your IP has been banned for violating community guidelines.');
       navigate('/');
     });
@@ -248,6 +260,7 @@ export default function ChatRoom() {
     }
     
     socketRef.current.emit('report_user', { screenshot });
+    playSfx(reportSound);
     setStatus('User reported. Moderation team notified.');
     setTimeout(() => setStatus(isConnected ? 'Chatting with stranger...' : 'Searching...'), 3000);
   };
@@ -258,6 +271,7 @@ export default function ChatRoom() {
       const msgObj = { sender: 'me', text: inputMsg };
       setMessages((prev) => [...prev, msgObj]);
       socketRef.current.emit('chat_message', inputMsg);
+      playSfx(sendSound);
       setInputMsg('');
     }
   };
