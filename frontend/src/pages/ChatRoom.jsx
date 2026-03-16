@@ -279,7 +279,6 @@ export default function ChatRoom() {
       const msgObj = { sender: 'me', text: inputMsg };
       setMessages((prev) => [...prev, msgObj]);
       socketRef.current.emit('chat_message', inputMsg);
-      playSfx(sendSound);
       setInputMsg('');
     }
   };
