@@ -53,6 +53,7 @@ export default function ChatRoom() {
   const tapSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'));
   const reportSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2361/2361-preview.mp3'));
   const alertSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2356/2356-preview.mp3'));
+  const receiveSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2359/2359-preview.mp3'));
 
   const playSfx = (audioRef) => {
     if (!audioRef.current) return;
@@ -150,6 +151,7 @@ export default function ChatRoom() {
 
     socketRef.current.on('chat_message', (msg) => {
       setMessages((prev) => [...prev, msg]);
+      playSfx(receiveSound);
     });
 
     socketRef.current.on('kicked', ({ message }) => {
