@@ -46,6 +46,7 @@ export default function ChatRoom() {
   const remoteVideoRef = useRef(null);
   const localStreamRef = useRef(null);
   const chatboxRef = useRef(null);
+  const lastSoundTimeRef = useRef(0);
   
   // Audio Assets
   const matchSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
@@ -58,6 +59,10 @@ export default function ChatRoom() {
 
   const playSfx = (audioRef) => {
     if (!audioRef || !audioRef.current) return;
+    const now = Date.now();
+    if (now - lastSoundTimeRef.current < 150) return; // Premium Lockout: No bop-bo-bop!
+    lastSoundTimeRef.current = now;
+    
     audioRef.current.currentTime = 0;
     audioRef.current.play().catch(e => console.log("Audio blocked."));
   };
@@ -157,7 +162,10 @@ export default function ChatRoom() {
 
     socketRef.current.on('chat_message', (msg) => {
       setMessages((prev) => [...prev, msg]);
-      playSfx(receiveSound);
+      // Only play "bop" for incoming messages (sender plays their own bop locally)
+      if (msg.sender !== 'me') {
+        playSfx(receiveSound);
+      }
     });
 
     socketRef.current.on('kicked', ({ message }) => {
