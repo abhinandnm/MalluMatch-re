@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Send, UserX, UserSearch, LogOut, Layout } from 'lucide-react';
+import { Send, UserX, UserSearch, LogOut, Shield } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
 import './ChatRoom.css';
 
@@ -280,7 +280,7 @@ export default function ChatRoom() {
               </button>
             )}
              <button className="control-btn report-btn" onClick={reportUser} title="Report Nudity/Abuse">
-                <Layout size={16} color="#ef4444" /> {/* Use Layout as a shield-like icon or similar */}
+                <Shield size={16} color="#ef4444" /> {/* Use Shield for reports */}
              </button>
              <button className="control-btn exit-btn" onClick={handleHome}>
                 <LogOut size={16} /> {/* Exit */}
