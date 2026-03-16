@@ -561,6 +561,39 @@
   .text-layout .main-content-stage {
     display: none;
   }
+
+  /* Mobile Sidebar Header Actions */
+  .mobile-sidebar-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: auto;
+    margin-right: 1.5rem;
+  }
+
+  .sidebar-action-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    transition: all 0.2s;
+  }
+
+  .sidebar-action-btn.next { background: #1a73e8; }
+  .sidebar-action-btn.stop { background: #ea4335; }
+  .sidebar-action-btn.report { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); }
+}
+
+/* Desktop: Hide mobile sidebar actions */
+@media (min-width: 769px) {
+  .mobile-sidebar-actions {
+    display: none;
+  }
 }
 
 @keyframes status-pulse {

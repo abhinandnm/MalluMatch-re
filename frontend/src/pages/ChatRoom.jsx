@@ -468,6 +468,23 @@ export default function ChatRoom() {
               <span className={`status-dot ${isConnected ? 'active' : ''}`}></span>
               <span>{isConnected ? "Connected" : "Disconnected"}</span>
            </div>
+           
+           <div className="mobile-sidebar-actions">
+             {!isConnected && status.includes('disconnected') ? (
+                <button className="sidebar-action-btn next" onClick={() => { playSfx(tapSound); handleNext(); }} title="Match New Partner">
+                  <UserSearch size={18} />
+                </button>
+              ) : (
+                <button className="sidebar-action-btn stop" onClick={() => { playSfx(tapSound); handleStop(); }} disabled={!isConnected && !status.includes('Looking')} title="Stop Chat">
+                  <UserX size={18} />
+                </button>
+              )}
+              
+              <button className="sidebar-action-btn report" onClick={() => { playSfx(tapSound); reportUser(); }} title="Report User">
+                <Shield size={18} />
+              </button>
+           </div>
+
            <button className="close-sidebar-btn" onClick={() => setShowChat(false)}>×</button>
         </div>
 

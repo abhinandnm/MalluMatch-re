@@ -17,12 +17,16 @@ const AppWrapper = () => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const socketRef = useRef(null);
+  const chimeSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
 
   useEffect(() => {
     socketRef.current = io('https://mallumatch-api.onrender.com');
     
     socketRef.current.on('global_announcement', ({ message }) => {
       setAnnouncement(message);
+      // Play calm chime for broadcast
+      chimeSound.current.currentTime = 0;
+      chimeSound.current.play().catch(e => console.log("Audio blocked."));
     });
 
     return () => {
