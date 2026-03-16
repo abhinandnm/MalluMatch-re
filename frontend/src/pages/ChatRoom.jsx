@@ -332,6 +332,7 @@ export default function ChatRoom() {
                 {!isConnected && <div className="video-status">Waiting for partner...</div>}
                 <video 
                   ref={(el) => {
+                    remoteVideoRef.current = el;
                     if (el && remoteStream) el.srcObject = remoteStream;
                   }} 
                   autoPlay 
@@ -341,6 +342,7 @@ export default function ChatRoom() {
              <div className="video-feed self-video">
                 <video 
                   ref={(el) => {
+                    localVideoRef.current = el;
                     if (el && localStream) el.srcObject = localStream;
                   }} 
                   autoPlay 
