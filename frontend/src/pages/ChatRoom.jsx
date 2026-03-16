@@ -247,6 +247,14 @@ export default function ChatRoom() {
       };
     }, [chatType, setupMedia]);
 
+  // High-reliability auto-hide for mobile matching
+  useEffect(() => {
+    if (isConnected && chatType === 'video' && window.innerWidth < 768) {
+      console.log("📱 High-reliability auto-hide triggered.");
+      setShowChat(false);
+    }
+  }, [isConnected, chatType]);
+
   useEffect(() => {
     if (chatboxRef.current) {
       chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
