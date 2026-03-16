@@ -15,15 +15,28 @@ const io = new Server(server, {
   }
 });
 
-class MatchMaker {
+const bannedIPs = new Set();
+const reports = [];
+const liveLogs = []; // Feed of all text messages
+const admins = new Set();
+
+const matchMaker = new (class MatchMaker {
   constructor() {
     this.videoQueue = [];
     this.textQueue = [];
     this.activeRooms = new Map(); // roomId -> { user1, user2, type }
     this.userRooms = new Map(); // socketId -> roomId
+    this.userIPs = new Map(); // socketId -> IP
   }
 
   addUser(socket, type) {
+    const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+    if (bannedIPs.has(ip)) {
+      socket.emit('banned', { message: 'Your IP is banned for violating community guidelines.' });
+      socket.disconnect();
+      return;
+    }
+    this.userIPs.set(socket.id, ip);
     // If user is already in a queue, remove them first
     this.removeUserFromQueues(socket.id);
     

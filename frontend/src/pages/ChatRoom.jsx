@@ -179,6 +179,23 @@ export default function ChatRoom() {
     navigate('/');
   };
 
+  const reportUser = () => {
+    if (!remoteVideoRef.current) return;
+    
+    // Capture a snapshot of the remote video
+    const canvas = document.createElement('canvas');
+    canvas.width = remoteVideoRef.current.videoWidth || 640;
+    canvas.height = remoteVideoRef.current.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(remoteVideoRef.current, 0, 0, canvas.width, canvas.height);
+    
+    const screenshot = canvas.toDataURL('image/webp', 0.5); // Compressed screenshot
+    
+    socket.emit('report_user', { screenshot });
+    setStatus('User reported. Moderation team notified.');
+    setTimeout(() => setStatus(connected ? 'Chatting with stranger...' : 'Searching...'), 3000);
+  };
+
   const sendMessage = (e) => {
     e.preventDefault();
     if (inputMsg.trim() && isConnected) {
