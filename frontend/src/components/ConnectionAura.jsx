@@ -25,6 +25,14 @@ const ConnectionAura = ({ active }) => {
         <div className="ripple ripple-2"></div>
         <div className="ripple ripple-3"></div>
       </div>
+
+      {/* Screen Edge Glow Effect */}
+      <div className="edge-glow-container">
+        <div className="edge-glow-bar top"></div>
+        <div className="edge-glow-bar bottom"></div>
+        <div className="edge-glow-bar left"></div>
+        <div className="edge-glow-bar right"></div>
+      </div>
     </div>
   );
 };

@@ -135,97 +135,93 @@ export default function ChatRoom() {
 
       // Initial trigger on mount
       setupMedia();
-      setIsConnected(true);
-      setAuraActive(true);
-      setStatus("Partner found! Respect each other and have fun.");
-      setMessages([]);
-      createPeerConnection();
-      
-      // Play Premium Match Sound
-      playSfx(matchSound);
-      
-      // Reset aura after effect duration
-      setTimeout(() => setAuraActive(false), 5000);
-    });
 
-    socketRef.current.on('stranger_disconnected', ({ message }) => {
-      setIsConnected(false);
-      setStatus("Stranger has disconnected.");
-      cleanupPeerConnection();
-      
-      // Play Premium Disconnect Sound
-      playSfx(disconnectSound);
-    });
+      socketRef.current.on('match_found', ({ message }) => {
+        setIsConnected(true);
+        setAuraActive(true);
+        setStatus("Partner found! Respect each other and have fun.");
+        setMessages([]);
+        createPeerConnection();
+        playSfx(matchSound);
+        setTimeout(() => setAuraActive(false), 5000);
+      });
 
-    socketRef.current.on('initiate_webrtc', async () => {
-      if (!peerConnectionRef.current) return;
-      try {
-        const offer = await peerConnectionRef.current.createOffer();
-        await peerConnectionRef.current.setLocalDescription(offer);
-        socketRef.current.emit('webrtc_offer', offer);
-      } catch (err) {
-        console.error("Error creating offer", err);
-      }
-    });
+      socketRef.current.on('stranger_disconnected', ({ message }) => {
+        setIsConnected(false);
+        setStatus("Stranger has disconnected.");
+        cleanupPeerConnection();
+        playSfx(disconnectSound);
+      });
 
-    socketRef.current.on('webrtc_offer', async (offer) => {
-      if (!peerConnectionRef.current) return;
-      try {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnectionRef.current.createAnswer();
-        await peerConnectionRef.current.setLocalDescription(answer);
-        socketRef.current.emit('webrtc_answer', answer);
-      } catch (err) {
-        console.error("Error handling offer", err);
-      }
-    });
+      socketRef.current.on('initiate_webrtc', async () => {
+        if (!peerConnectionRef.current) return;
+        try {
+          const offer = await peerConnectionRef.current.createOffer();
+          await peerConnectionRef.current.setLocalDescription(offer);
+          socketRef.current.emit('webrtc_offer', offer);
+        } catch (err) {
+          console.error("Error creating offer", err);
+        }
+      });
 
-    socketRef.current.on('webrtc_answer', async (answer) => {
-      if (!peerConnectionRef.current) return;
-      try {
-        await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-      } catch (err) {
-        console.error("Error handling answer", err);
-      }
-    });
+      socketRef.current.on('webrtc_offer', async (offer) => {
+        if (!peerConnectionRef.current) return;
+        try {
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
+          const answer = await peerConnectionRef.current.createAnswer();
+          await peerConnectionRef.current.setLocalDescription(answer);
+          socketRef.current.emit('webrtc_answer', answer);
+        } catch (err) {
+          console.error("Error handling offer", err);
+        }
+      });
 
-    socketRef.current.on('webrtc_ice_candidate', async (candidate) => {
-      if (!peerConnectionRef.current) return;
-      try {
-        await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (err) {
-        console.error("Error adding ice candidate", err);
-      }
-    });
+      socketRef.current.on('webrtc_answer', async (answer) => {
+        if (!peerConnectionRef.current) return;
+        try {
+          await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        } catch (err) {
+          console.error("Error handling answer", err);
+        }
+      });
 
-    socketRef.current.on('chat_message', (msg) => {
-      setMessages((prev) => [...prev, msg]);
-      // Only play "bop" for incoming messages (sender plays their own bop locally)
-      if (msg.sender !== 'me') {
-        playSfx(receiveSound);
-      }
-    });
+      socketRef.current.on('webrtc_ice_candidate', async (candidate) => {
+        if (!peerConnectionRef.current) return;
+        try {
+          await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (err) {
+          console.error("Error adding ice candidate", err);
+        }
+      });
 
-    socketRef.current.on('kicked', ({ message }) => {
-      playSfx(alertSound);
-      alert(message || 'You have been kicked by an admin.');
-      navigate('/');
-    });
+      socketRef.current.on('chat_message', (msg) => {
+        setMessages((prev) => [...prev, msg]);
+        if (msg.sender !== 'me') {
+          playSfx(receiveSound);
+        }
+      });
 
-    socketRef.current.on('banned', ({ message }) => {
-      playSfx(alertSound);
-      alert(message || 'Your IP has been banned for violating community guidelines.');
-      navigate('/');
-    });
+      socketRef.current.on('kicked', ({ message }) => {
+        playSfx(alertSound);
+        alert(message || 'You have been kicked by an admin.');
+        navigate('/');
+      });
 
-    return () => {
-      cleanupPeerConnection();
-      if (localStreamRef.current) {
-         localStreamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (socketRef.current) socketRef.current.disconnect();
-    };
-  }, [chatType, setupMedia]);
+      socketRef.current.on('banned', ({ message }) => {
+        playSfx(alertSound);
+        alert(message || 'Your IP has been banned for violating community guidelines.');
+        navigate('/');
+      });
+
+      return () => {
+        cleanupPeerConnection();
+        if (localStreamRef.current) {
+           localStreamRef.current.getTracks().forEach(track => track.stop());
+           localStreamRef.current = null;
+        }
+        if (socketRef.current) socketRef.current.disconnect();
+      };
+    }, [chatType, setupMedia]);
 
   useEffect(() => {
     if (chatboxRef.current) {
@@ -351,6 +347,11 @@ export default function ChatRoom() {
           <div className="video-column meet-style">
              <div className="video-feed stranger-video">
                 {!isConnected && <div className="video-status">Waiting for partner...</div>}
+                {!isConnected && status.includes('denied') && (
+                  <button className="premium-btn" onClick={() => setupMedia()} style={{ marginTop: '1rem' }}>
+                    Retry Camera
+                  </button>
+                )}
                 <video 
                   ref={(el) => {
                     remoteVideoRef.current = el;
