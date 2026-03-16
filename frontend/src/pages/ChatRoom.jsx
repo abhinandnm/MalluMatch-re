@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Send, UserX, UserSearch, LogOut, Shield } from 'lucide-react';
+import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
 import './ChatRoom.css';
@@ -38,6 +38,7 @@ export default function ChatRoom() {
   const [inputMsg, setInputMsg] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [auraActive, setAuraActive] = useState(false);
+  const [showChat, setShowChat] = useState(true);
   
   const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -61,27 +62,34 @@ export default function ChatRoom() {
     audioRef.current.play().catch(e => console.log("Audio blocked."));
   };
 
-  useEffect(() => {
-    socketRef.current = io('https://mallumatch-api.onrender.com');
-    
-    const setupMedia = async () => {
+    const setupMedia = useCallback(async () => {
+      try {
+        if (chatType === 'video') {
+          // Stop old tracks if any
+          if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(t => t.stop());
+          }
           const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
           localStreamRef.current = stream;
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
-        } catch (err) {
-          console.error("Error accessing media devices.", err);
-          setStatus('Camera access denied. Text mode only.');
         }
+      } catch (err) {
+        console.error("Error accessing media devices.", err);
+        setStatus('Camera access denied. Text mode only.');
+      } finally {
+        socketRef.current.emit('join_queue', { type: chatType });
+        setStatus('Looking for a partner...');
       }
-      socketRef.current.emit('join_queue', { type: chatType });
-      setStatus('Looking for a partner...');
-    };
+    }, [chatType]);
 
-    socketRef.current.on('connect', () => {
-      setupMedia();
-    });
+    useEffect(() => {
+      socketRef.current = io('https://mallumatch-api.onrender.com');
+      
+      socketRef.current.on('connect', () => {
+        setupMedia();
+      });
 
     socketRef.current.on('match_found', ({ message }) => {
       setIsConnected(true);
@@ -171,7 +179,7 @@ export default function ChatRoom() {
       }
       if (socketRef.current) socketRef.current.disconnect();
     };
-  }, [chatType]);
+  }, [chatType, setupMedia]);
 
   useEffect(() => {
     if (chatboxRef.current) {
@@ -291,30 +299,64 @@ export default function ChatRoom() {
   };
 
   return (
-    <div className="chatbox-container">
+    <div className={`chatbox-container ${chatType === 'video' ? 'meet-layout' : 'text-layout'}`}>
       <ConnectionAura active={auraActive} />
       
-      {chatType === 'video' && (
-        <div className="video-column">
-          <div className="video-feed stranger-video">
-             {!isConnected && <div className="video-status">Waiting for partner...</div>}
-             <video ref={remoteVideoRef} autoPlay playsInline></video>
+      <div className="main-content-stage">
+        {chatType === 'video' && (
+          <div className="video-column meet-style">
+            <div className="video-feed stranger-video">
+               {!isConnected && <div className="video-status">Waiting for partner...</div>}
+               <video ref={remoteVideoRef} autoPlay playsInline></video>
+            </div>
+            <div className="video-feed self-video">
+               <video ref={localVideoRef} autoPlay playsInline muted></video>
+               <div className="self-label">You</div>
+            </div>
           </div>
-          <div className="video-feed self-video">
-             <video ref={localVideoRef} autoPlay playsInline muted></video>
-             <div className="self-label">You</div>
+        )}
+
+        {chatType === 'text' && (
+          <div className="text-mode-placeholder">
+             <h2>Text Chat Active</h2>
+             <p>{status}</p>
+          </div>
+        )}
+
+        <div className="meet-controls-bar">
+          <div className="controls-group">
+            {!isConnected && status.includes('disconnected') ? (
+              <button className="meet-btn next-btn" onClick={() => { playSfx(tapSound); handleNext(); }} title="Match New Partner">
+                <UserSearch size={22} />
+              </button>
+            ) : (
+              <button className="meet-btn stop-btn" onClick={() => { playSfx(tapSound); handleStop(); }} disabled={!isConnected && !status.includes('Looking')} title="Stop Chat">
+                <UserX size={22} />
+              </button>
+            )}
+
+            <button className="meet-btn report-btn" onClick={() => { playSfx(tapSound); reportUser(); }} title="Report User">
+              <Shield size={20} />
+            </button>
+
+            <button className={`meet-btn chat-toggle-btn ${showChat ? 'active' : ''}`} onClick={() => setShowChat(!showChat)} title="Toggle Chat">
+              <MessageSquare size={20} />
+            </button>
+
+            <button className="meet-btn exit-btn danger" onClick={() => { playSfx(tapSound); handleHome(); }} title="Exit to Home">
+              <LogOut size={20} />
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      <div className={`chat-column ${chatType === 'text' ? 'full-width' : ''}`}>
-        
-        <div className="chat-header">
+      <div className={`chat-sidebar ${showChat ? 'visible' : 'hidden'} ${chatType === 'text' ? 'full-ui' : ''}`}>
+        <div className="sidebar-header">
            <div className="status-indicator">
               <span className={`status-dot ${isConnected ? 'active' : ''}`}></span>
               <span>{isConnected ? "Connected" : "Disconnected"}</span>
            </div>
-           {chatType === 'text' && <div className="mode-badge">Text Mode</div>}
+           <button className="close-sidebar-btn" onClick={() => setShowChat(false)}>×</button>
         </div>
 
         <div className="chat-log" ref={chatboxRef}>
@@ -331,34 +373,7 @@ export default function ChatRoom() {
           ))}
         </div>
 
-        <div className="chat-control">
-          <div className="btn-group-left">
-            {!isConnected && status.includes('disconnected') ? (
-              <button className="control-btn next-btn" onClick={() => { playSfx(tapSound); handleNext(); }}>
-                <UserSearch size={20} />
-                <div className="btn-labels">
-                  <span className="btn-title">New</span>
-                  <span className="btn-sub">Esc</span>
-                </div>
-              </button>
-            ) : (
-              <button className="control-btn stop-btn" onClick={() => { playSfx(tapSound); handleStop(); }} disabled={!isConnected && !status.includes('Looking')}>
-                <UserX size={20} />
-                <div className="btn-labels">
-                  <span className="btn-title">Stop</span>
-                  <span className="btn-sub">Esc</span>
-                </div>
-              </button>
-            )}
-             <button className="control-btn report-btn" onClick={() => { playSfx(tapSound); reportUser(); }} title="Report Nudity/Abuse">
-                <Shield size={16} color="#ef4444" />
-                <span className="report-label">Report</span>
-             </button>
-             <button className="control-btn exit-btn" onClick={() => { playSfx(tapSound); handleHome(); }}>
-                <LogOut size={16} /> {/* Exit */}
-             </button>
-          </div>
-          
+        <div className="sidebar-input-area">
           <div className="input-wrap">
              <textarea 
                className="chatmsg"
@@ -366,18 +381,14 @@ export default function ChatRoom() {
                value={inputMsg}
                onChange={(e) => setInputMsg(e.target.value)}
                onKeyDown={handleKeyDown}
-               placeholder={isConnected ? "Type a message..." : "Waiting to connect..."}
+               placeholder={isConnected ? "Send a message..." : "Waiting..."}
              ></textarea>
-          </div>
-          
-          <div className="btn-group-right">
-             <button className="control-btn send-btn" onClick={(e) => { playSfx(tapSound); sendMessage(e); }} disabled={!isConnected || !inputMsg.trim()}>
-                <Send size={20} className="send-icon" />
+             <button className="sidebar-send-btn" onClick={(e) => { playSfx(tapSound); sendMessage(e); }} disabled={!isConnected || !inputMsg.trim()}>
+                <Send size={18} />
              </button>
           </div>
         </div>
       </div>
-      
     </div>
   );
 }
