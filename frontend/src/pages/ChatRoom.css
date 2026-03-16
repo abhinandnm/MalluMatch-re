@@ -351,167 +351,209 @@
 @media (max-width: 768px) {
   .chatbox-container {
     flex-direction: column;
-    height: calc(100dvh - 64px); 
+    height: 100dvh;
     gap: 0;
     padding: 0;
     overflow: hidden;
+    background: #0b0e14; /* Premium Deep Dark */
   }
   
   .video-column {
-    flex-direction: column;
-    flex: 0 0 300px; /* Taller area for video */
-    height: 300px;
-    padding: 0;
-    gap: 0;
+    flex: 0 0 45%;
+    height: 45%;
+    padding: 10px;
+    gap: 10px;
     position: relative;
-    background: #000;
+    background: transparent;
   }
   
+  .video-feed {
+    border: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    background: #161b22;
+  }
+
   .video-feed.stranger-video {
     width: 100%;
     height: 100%;
-    border-radius: 0;
-    border: none;
+    border-radius: var(--radius-lg);
   }
 
   .video-feed.self-video {
     position: absolute;
-    bottom: 15px;
-    right: 15px;
-    width: 100px;
-    height: 135px;
+    bottom: 20px;
+    right: 20px;
+    width: 110px;
+    height: 150px;
     z-index: 20;
-    border: 3px solid #fff;
+    border: 2px solid rgba(255,255,255,0.1);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     background: #000;
   }
 
-  .self-label {
-    bottom: 8px;
-    left: 8px;
-    padding: 2px 8px;
-    font-size: 0.75rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  }
-
+  /* Premium Floating Chat Column */
   .chat-column {
-    border-radius: 0;
-    border: none;
     flex: 1;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
   }
 
   .chat-header {
-    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 10px 20px;
+    color: white;
+  }
+
+  .status-indicator {
+    color: #e2e8f0;
   }
 
   .chat-log {
-    padding: 1rem;
+    background: transparent;
+    padding: 10px 5px;
   }
 
+  .log-msg-bubble {
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
+  }
+
+  .log-me .log-msg-bubble {
+    background: linear-gradient(135deg, #ec4899, #8b5cf6); /* Reference image colors */
+    border: none;
+    color: white;
+  }
+
+  /* THE FLOATING CONTROL BAR */
   .chat-control {
-    display: grid;
-    grid-template-areas: 
-      "input input input"
-      "actions actions send";
-    grid-template-columns: 1fr 1fr 64px;
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
     height: auto;
-    padding: 0.75rem;
-    gap: 0.5rem;
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+    background: rgba(20, 24, 33, 0.85);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 32px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    z-index: 1000;
+    animation: float-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  /* Input Row Inside Pill */
   .input-wrap {
     width: 100%;
   }
 
   .chatmsg {
-    height: 60px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    color: white;
+    height: 50px;
+    padding: 12px 20px;
+    font-size: 0.95rem;
   }
 
+  .chatmsg::placeholder {
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* Action Buttons Row */
   .btn-group-left, .btn-group-right {
     display: flex;
+    justify-content: space-between;
     width: 100%;
-    gap: 0.5rem;
+    gap: 12px;
   }
 
   .btn-group-left {
-    order: 2; /* Move buttons below text area on mobile */
-  }
-
-  .input-wrap {
-    order: 1;
+    order: 2;
   }
 
   .btn-group-right {
-    order: 3;
-    display: none; /* Hide separate send button on mobile, combine logic? */
+    position: absolute;
+    right: 20px;
+    top: 18px; /* Inside the input wrapper line visually */
+    width: auto;
   }
 
-  /* Compact buttons for mobile */
   .control-btn {
     flex: 1;
-    height: 48px;
-    padding: 0;
+    height: 52px;
+    border-radius: 26px; /* High rounding like GMeet */
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    box-shadow: none;
+  }
+
+  .control-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: none;
+  }
+
+  .send-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    border: none;
+  }
+
+  .report-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+
+  .report-label {
+    display: none; /* Icon only for cleaner look */
   }
 
   .stop-btn, .next-btn {
-    min-width: 0;
-    flex: 2; /* Give more space to main actions */
+    min-width: 100px;
+  }
+
+  .next-btn {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+
+  .exit-btn {
+    max-width: 52px;
   }
 
   .btn-labels {
     display: none;
   }
 
-  /* Show send button inside or next to textarea if preferred, or as a wide button */
-  .btn-group-right {
-    display: flex; /* Keeping it for now but maybe inline it */
-    position: absolute;
-    right: 1.25rem;
-    bottom: 4.75rem; /* Position over the textarea? No, let's keep it clean */
-  }
-  
-  /* RE-FIXING MOBILE LAYOUT FOR CONTROLS */
-  .chat-control {
-    position: relative;
-    padding-bottom: 0.5rem;
-  }
-
-  .btn-group-right {
-    position: static;
-    order: 2;
-    width: auto;
-    flex: 0 0 60px;
-  }
-
-  .mobile-action-bar {
-    display: flex;
-    width: 100%;
-    gap: 0.5rem;
-    order: 2;
-  }
-  
-  /* Simplified row for mobile: [STOP/NEXT] [REPORT] [EXIT] [SEND] */
-  .chat-control {
-    display: grid;
-    grid-template-areas: 
-      "input input input"
-      "actions actions send";
-    grid-template-columns: 1fr 1fr 64px;
-  }
-
-  .input-wrap {
-    grid-area: input;
-  }
-
-  .btn-group-left {
-    grid-area: actions;
-    display: flex;
-  }
-
-  .btn-group-right {
-    grid-area: send;
-    display: flex;
+  /* Adjust Chat Log to not be hidden by floating bar */
+  .chat-log {
+    padding-bottom: 180px; /* Space for the floating bar */
   }
 }
+
+@keyframes float-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
