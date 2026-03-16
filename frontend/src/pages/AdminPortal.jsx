@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { Send, Lock, BellRing } from 'lucide-react';
+import { Send, Lock, BellRing, Shield } from 'lucide-react';
 import './AdminPortal.css';
 
 export default function AdminPortal() {
