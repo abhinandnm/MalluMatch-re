@@ -17,7 +17,7 @@ const AppWrapper = () => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const socketRef = useRef(null);
-  const chimeSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
+  const chimeSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3'));
 
   useEffect(() => {
     socketRef.current = io('https://mallumatch-api.onrender.com');
