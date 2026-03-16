@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info } from 'lucide-react';
+import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info, Wand2 } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
 import './ChatRoom.css';
@@ -39,8 +39,20 @@ export default function ChatRoom() {
   const [isConnected, setIsConnected] = useState(false);
   const [auraActive, setAuraActive] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState('none');
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+
+  const FILTERS = [
+    { id: 'none', label: 'None', color: '#64748b' },
+    { id: 'bw', label: 'B&W', color: '#94a3b8' },
+    { id: 'retro', label: 'Retro', color: '#b45309' },
+    { id: 'xray', label: 'X-Ray', color: '#ffffff' },
+    { id: 'disco', label: 'Disco', color: '#ec4899' },
+    { id: 'mystic', label: 'Mystic', color: '#a855f7' },
+    { id: 'alien', label: 'Alien', color: '#22c55e' }
+  ];
   
   const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -370,6 +382,7 @@ export default function ChatRoom() {
                   autoPlay 
                   playsInline 
                   muted
+                  className={`filter-${selectedFilter}`}
                 ></video>
                 <div className="self-label">You</div>
              </div>
@@ -384,6 +397,21 @@ export default function ChatRoom() {
         )}
 
         <div className="meet-controls-bar">
+          {showFilters && (
+            <div className="filter-menu">
+              {FILTERS.map(f => (
+                <div 
+                  key={f.id} 
+                  className={`filter-option ${selectedFilter === f.id ? 'active' : ''}`}
+                  onClick={() => { setSelectedFilter(f.id); setShowFilters(false); playSfx(tapSound); }}
+                >
+                  <div className={`filter-preview-circle filter-${f.id}`} style={{ backgroundColor: f.color }}></div>
+                  <span className="filter-label">{f.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          
           <div className="controls-group">
             {!isConnected && status.includes('disconnected') ? (
               <button className="meet-btn next-btn" onClick={() => { playSfx(tapSound); handleNext(); }} title="Match New Partner">
@@ -394,6 +422,10 @@ export default function ChatRoom() {
                 <UserX size={22} />
               </button>
             )}
+
+            <button className={`meet-btn filter-btn ${showFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showFilters)} title="Funny Filters">
+               <Wand2 size={20} />
+            </button>
 
             <button className="meet-btn report-btn" onClick={() => { playSfx(tapSound); reportUser(); }} title="Report User">
               <Shield size={20} />

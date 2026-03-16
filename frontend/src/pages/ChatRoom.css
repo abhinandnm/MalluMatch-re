@@ -92,11 +92,48 @@
 }
 
 .video-status {
-  color: #94a3b8;
-  font-family: var(--font-heading);
-  font-size: 1.25rem;
-  font-weight: 500;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 10;
+  
+  /* Minecraft Dirt Background Pattern */
+  background-color: #3b2a1a;
+  background-image: 
+    linear-gradient(45deg, #4d3627 25%, transparent 25%, transparent 75%, #4d3627 75%, #4d3627), 
+    linear-gradient(45deg, #4d3627 25%, transparent 25%, transparent 75%, #4d3627 75%, #4d3627);
+  background-size: 60px 60px;
+  background-position: 0 0, 30px 30px;
+  border-radius: inherit; /* Maintain parent's rounded corners */
+  
+  /* Text Styling (Minecraft Vibe) */
+  color: #fff;
+  font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  text-align: center;
+  padding: 2rem;
+  
+  /* Glow and Shadow */
+  text-shadow: 
+    0 0 15px rgba(255, 255, 255, 0.8),
+    0 0 30px rgba(255, 255, 255, 0.4),
+    4px 4px 0px rgba(0, 0, 0, 0.8); /* Retro blocky shadow */
+  
+  animation: text-glow-pulse 2s infinite ease-in-out;
+}
+
+@keyframes text-glow-pulse {
+  0% { transform: scale(0.98); opacity: 0.9; }
+  50% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.98); opacity: 0.9; }
 }
 
 /* Controls Bar (Desktop Pill) */
@@ -373,6 +410,7 @@
   font-size: 2.5rem;
   margin-bottom: 1rem;
   background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
