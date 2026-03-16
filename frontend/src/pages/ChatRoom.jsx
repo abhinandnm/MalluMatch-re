@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Send, UserX, UserSearch, LogOut, Shield } from 'lucide-react';
+import { Send, UserX, UserSearch, LogOut, Shield, RefreshCw } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
 import './ChatRoom.css';
@@ -38,6 +38,7 @@ export default function ChatRoom() {
   const [inputMsg, setInputMsg] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [auraActive, setAuraActive] = useState(false);
+  const [facingMode, setFacingMode] = useState('user'); // 'user' (front) or 'environment' (back)
   
   const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -67,7 +68,14 @@ export default function ChatRoom() {
     const setupMedia = async () => {
       if (chatType === 'video') {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          // Stop old tracks if switching cameras
+          if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(t => t.stop());
+          }
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: facingMode }, 
+            audio: true 
+          });
           localStreamRef.current = stream;
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
@@ -248,6 +256,11 @@ export default function ChatRoom() {
     navigate('/');
   };
 
+  const toggleCamera = () => {
+    setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+    playSfx(tapSound);
+  };
+
   const reportUser = () => {
     let screenshot = null;
 
@@ -305,6 +318,9 @@ export default function ChatRoom() {
           <div className="video-feed self-video">
              <video ref={localVideoRef} autoPlay playsInline muted></video>
              <div className="self-label">You</div>
+             <button className="flip-btn" onClick={toggleCamera} title="Switch Camera">
+                <RefreshCw size={14} />
+             </button>
           </div>
         </div>
       )}

@@ -351,7 +351,7 @@
 @media (max-width: 768px) {
   .chatbox-container {
     flex-direction: column;
-    height: 100dvh;
+    height: calc(100dvh - 64px); /* Account for Navbar height */
     gap: 0;
     padding: 0;
     overflow: hidden;
@@ -390,6 +390,27 @@
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
     background: #000;
+  }
+
+  .flip-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+  }
+
+  .flip-btn:active {
+    background: rgba(255,255,255,0.2);
   }
 
   /* Premium Floating Chat Column */
