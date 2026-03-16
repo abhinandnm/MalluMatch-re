@@ -63,57 +63,78 @@ export default function ChatRoom() {
   const playSfx = (audioRef) => {
     if (!audioRef || !audioRef.current) return;
     const now = Date.now();
-    if (now - lastSoundTimeRef.current < 150) return; // Premium Lockout: No bop-bo-bop!
+    if (now - lastSoundTimeRef.current < 150) return;
     lastSoundTimeRef.current = now;
     
     audioRef.current.currentTime = 0;
     audioRef.current.play().catch(e => console.log("Audio blocked."));
   };
 
-    const setupMedia = useCallback(async () => {
-      if (isMediaInitializing.current) return;
-      isMediaInitializing.current = true;
-      
-      try {
-        if (chatType === 'video') {
-          // Check if we already have a valid active stream
-          if (localStreamRef.current && localStreamRef.current.active) {
-            console.log("Using existing active stream");
-            setLocalStream(localStreamRef.current);
-          } else {
-            console.log("Requesting new media stream...");
-            let stream;
-            try {
-              stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            } catch (innerErr) {
-              console.warn("Audio+Video failed, trying video only...", innerErr);
-              stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            }
-            
-            localStreamRef.current = stream;
-            setLocalStream(stream);
+  const setupMedia = useCallback(async () => {
+    console.log("🎥 setupMedia triggered, type:", chatType);
+    if (isMediaInitializing.current) {
+      console.log("⏳ Media already initializing, skipping...");
+      return;
+    }
+    isMediaInitializing.current = true;
+    
+    try {
+      if (chatType === 'video') {
+        if (localStreamRef.current && localStreamRef.current.active) {
+          console.log("✅ Using existing active stream");
+          setLocalStream(localStreamRef.current);
+        } else {
+          console.log("🔌 Requesting NEW media stream...");
+          let stream;
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            console.log("🎵 Audio+Video stream acquired.");
+          } catch (innerErr) {
+            console.warn("⚠️ Audio+Video failed, trying video only...", innerErr);
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            console.log("📹 Video-only stream acquired.");
+          }
+          
+          localStreamRef.current = stream;
+          setLocalStream(stream);
+
+          // Failsafe attachment if component is already rendered
+          if (localVideoRef.current) {
+            console.log("📺 Direct attachment to video element.");
+            localVideoRef.current.srcObject = stream;
           }
         }
-      } catch (err) {
-        console.error("Error accessing media devices.", err);
-        setStatus('Camera access denied. Text mode only.');
-      } finally {
-        if (socketRef.current?.connected) {
-          socketRef.current.emit('join_queue', { type: chatType });
-          setStatus('Looking for a partner...');
-        }
-        isMediaInitializing.current = false;
       }
-    }, [chatType]);
+    } catch (err) {
+      console.error("❌ Fatal media error:", err);
+      setStatus('Camera access denied. Text mode only.');
+    } finally {
+      if (socketRef.current?.connected) {
+        console.log("🚀 Emitting join_queue...");
+        socketRef.current.emit('join_queue', { type: chatType });
+        setStatus('Looking for a partner...');
+      } else {
+        console.log("⏳ Socket not connected, will join on connect.");
+      }
+      isMediaInitializing.current = false;
+    }
+  }, [chatType]);
 
     useEffect(() => {
+      console.log("⚡ ChatRoom Effect Initializing...");
       socketRef.current = io('https://mallumatch-api.onrender.com');
       
       socketRef.current.on('connect', () => {
-        setupMedia();
+        console.log("🔗 Socket connected.");
+        if (!isMediaInitializing.current && (!localStreamRef.current || !localStreamRef.current.active)) {
+           setupMedia();
+        } else if (socketRef.current.connected) {
+           socketRef.current.emit('join_queue', { type: chatType });
+        }
       });
 
-    socketRef.current.on('match_found', ({ message }) => {
+      // Initial trigger on mount
+      setupMedia();
       setIsConnected(true);
       setAuraActive(true);
       setStatus("Partner found! Respect each other and have fun.");
