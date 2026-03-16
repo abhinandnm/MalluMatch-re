@@ -11,10 +11,35 @@
   justify-content: space-between;
   gap: 4rem;
   margin-bottom: 6rem;
+  position: relative; /* Anchor for background video */
+  min-height: 500px;
+}
+
+.hero-video-bg {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 50%;
+  height: 100%;
+  object-fit: contain;
+  z-index: -1;
+  opacity: 0.6;
+  filter: hue-rotate(240deg) brightness(0.8) blur(1px); /* Match MalluMatch Blue/Purple */
+  pointer-events: none;
+}
+
+/* Mobile Guard: Hide video on small screens as requested */
+@media (max-width: 768px) {
+  .hero-video-bg {
+    display: none;
+  }
 }
 
 .hero-text {
   flex: 1.2;
+  position: relative;
+  z-index: 2;
 }
 
 .live-pill {

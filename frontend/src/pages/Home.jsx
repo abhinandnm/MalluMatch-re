@@ -26,6 +26,17 @@ export default function Home() {
     <div className="home-container">
       
       <div className="hero-section">
+        {/* Matrix Earth Background - Desktop Only */}
+        <video 
+          className="hero-video-bg" 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+        >
+          <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-the-earth-rotating-1611-large.mp4" type="video/mp4" />
+        </video>
+
         <div className="hero-text">
           <div className="live-pill">
              <span className="pulse-dot"></span>
