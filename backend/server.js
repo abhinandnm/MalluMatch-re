@@ -20,7 +20,7 @@ const reports = [];
 const liveLogs = []; // Feed of all text messages
 const admins = new Set();
 
-const matchMaker = new (class MatchMaker {
+class MatchMaker {
   constructor() {
     this.videoQueue = [];
     this.textQueue = [];
@@ -119,7 +119,6 @@ io.on('connection', (socket) => {
   io.emit('online_users', onlineUsers);
 
   socket.on('join_queue', ({ type }) => {
-    // type: 'video' | 'text'
     matchMaker.addUser(socket, type);
   });
 
@@ -128,7 +127,7 @@ io.on('connection', (socket) => {
   });
   
   socket.on('stop_chat', () => {
-     matchMaker.handleDisconnect(socket);
+    matchMaker.handleDisconnect(socket);
   });
 
   // Signaling messages for WebRTC
@@ -153,19 +152,89 @@ io.on('connection', (socket) => {
     }
   });
   
-  // Text Chat messages
+  // Text Chat messages + Live Logging
   socket.on('chat_message', (msg) => {
     const roomId = matchMaker.userRooms.get(socket.id);
     if (roomId) {
+      const logEntry = { roomId, sender: socket.id, text: msg, time: new Date().toLocaleTimeString() };
+      liveLogs.push(logEntry);
+      if (liveLogs.length > 100) liveLogs.shift();
+
+      // Send to partner
       socket.to(roomId).emit('chat_message', { sender: 'stranger', text: msg });
+
+      // Send to all admins
+      admins.forEach(adminId => {
+        io.to(adminId).emit('live_chat_log', logEntry);
+      });
     }
   });
 
-  // Admin handles a global broadcast
+  // Admin Actions
+  socket.on('admin_auth', ({ password }) => {
+    if (password === 'ccyr0149') {
+      admins.add(socket.id);
+      socket.emit('admin_auth_success', { reports, liveLogs });
+    }
+  });
+
   socket.on('admin_broadcast', ({ message, password }) => {
-    // Simple admin password check
     if (password === 'ccyr0149') {
       io.emit('global_announcement', { message });
+    }
+  });
+
+  socket.on('report_user', ({ screenshot }) => {
+    const roomId = matchMaker.userRooms.get(socket.id);
+    if (!roomId) return;
+    
+    const room = matchMaker.activeRooms.get(roomId);
+    if (!room) return;
+
+    const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
+    const partnerIP = matchMaker.userIPs.get(partnerId);
+
+    const report = {
+      id: Date.now(),
+      offenderId: partnerId,
+      offenderIP: partnerIP,
+      reporterId: socket.id,
+      screenshot,
+      timestamp: new Date().toLocaleTimeString()
+    };
+
+    reports.push(report);
+    if (reports.length > 50) reports.shift();
+
+    admins.forEach(adminId => {
+      io.to(adminId).emit('new_report', report);
+    });
+  });
+
+  socket.on('admin_kick', ({ targetId }) => {
+    if (!admins.has(socket.id)) return;
+    const targetSocket = io.sockets.sockets.get(targetId);
+    if (targetSocket) {
+      targetSocket.emit('kicked', { message: 'You have been kicked by an admin.' });
+      targetSocket.disconnect();
+    }
+  });
+
+  socket.on('admin_ban', ({ targetIP, targetId }) => {
+    if (!admins.has(socket.id)) return;
+    bannedIPs.add(targetIP);
+    
+    const targetSocket = io.sockets.sockets.get(targetId);
+    if (targetSocket) {
+      targetSocket.emit('banned', { message: 'Your IP has been banned.' });
+      targetSocket.disconnect();
+    } else {
+       for (const [sId, ip] of matchMaker.userIPs) {
+          if (ip === targetIP) {
+             const s = io.sockets.sockets.get(sId);
+             if (s) s.disconnect();
+          }
+       }
     }
   });
 
@@ -173,6 +242,7 @@ io.on('connection', (socket) => {
     onlineUsers--;
     io.emit('online_users', onlineUsers);
     matchMaker.handleDisconnect(socket);
+    admins.delete(socket.id);
   });
 });
 
