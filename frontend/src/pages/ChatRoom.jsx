@@ -39,6 +39,8 @@ export default function ChatRoom() {
   const [isConnected, setIsConnected] = useState(false);
   const [auraActive, setAuraActive] = useState(false);
   const [showChat, setShowChat] = useState(true);
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
   
   const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -77,22 +79,19 @@ export default function ChatRoom() {
           // Check if we already have a valid active stream
           if (localStreamRef.current && localStreamRef.current.active) {
             console.log("Using existing active stream");
-            if (localVideoRef.current && !localVideoRef.current.srcObject) {
-              localVideoRef.current.srcObject = localStreamRef.current;
-            }
+            setLocalStream(localStreamRef.current);
           } else {
             console.log("Requesting new media stream...");
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            let stream;
+            try {
+              stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            } catch (innerErr) {
+              console.warn("Audio+Video failed, trying video only...", innerErr);
+              stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            }
             
-            // Clean up old if any (shouldn't be here but safe)
-            if (localStreamRef.current) {
-              localStreamRef.current.getTracks().forEach(t => t.stop());
-            }
-
             localStreamRef.current = stream;
-            if (localVideoRef.current) {
-              localVideoRef.current.srcObject = stream;
-            }
+            setLocalStream(stream);
           }
         }
       } catch (err) {
@@ -225,8 +224,8 @@ export default function ChatRoom() {
     }
 
     peerConnectionRef.current.ontrack = (event) => {
-      if (remoteVideoRef.current && event.streams && event.streams[0]) {
-        remoteVideoRef.current.srcObject = event.streams[0];
+      if (event.streams && event.streams[0]) {
+        setRemoteStream(event.streams[0]);
       }
     };
 
@@ -256,9 +255,7 @@ export default function ChatRoom() {
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
+    setRemoteStream(null);
   };
 
   const handleNext = () => {
@@ -331,26 +328,27 @@ export default function ChatRoom() {
       <div className="main-content-stage">
         {chatType === 'video' && (
           <div className="video-column meet-style">
-            <div className="video-feed stranger-video">
-               {!isConnected && <div className="video-status">Waiting for partner...</div>}
-               <video ref={remoteVideoRef} autoPlay playsInline></video>
-            </div>
-            <div className="video-feed self-video">
-               <video 
-                 ref={(el) => {
-                   if (el) {
-                     localVideoRef.current = el;
-                     if (localStreamRef.current && !el.srcObject) {
-                       el.srcObject = localStreamRef.current;
-                     }
-                   }
-                 }} 
-                 autoPlay 
-                 playsInline 
-                 muted
-               ></video>
-               <div className="self-label">You</div>
-            </div>
+             <div className="video-feed stranger-video">
+                {!isConnected && <div className="video-status">Waiting for partner...</div>}
+                <video 
+                  ref={(el) => {
+                    if (el && remoteStream) el.srcObject = remoteStream;
+                  }} 
+                  autoPlay 
+                  playsInline
+                ></video>
+             </div>
+             <div className="video-feed self-video">
+                <video 
+                  ref={(el) => {
+                    if (el && localStream) el.srcObject = localStream;
+                  }} 
+                  autoPlay 
+                  playsInline 
+                  muted
+                ></video>
+                <div className="self-label">You</div>
+             </div>
           </div>
         )}
 
