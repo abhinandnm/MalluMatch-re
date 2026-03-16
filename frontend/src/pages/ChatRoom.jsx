@@ -156,6 +156,11 @@ export default function ChatRoom() {
         createPeerConnection();
         playSfx(matchSound);
         setTimeout(() => setAuraActive(false), 5000);
+        
+        // Auto-hide sidebar to reveal video on match
+        if (chatType === 'video') {
+          setShowChat(false);
+        }
       });
 
       socketRef.current.on('stranger_disconnected', ({ message }) => {
