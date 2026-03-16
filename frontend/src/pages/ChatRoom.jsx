@@ -45,6 +45,10 @@ export default function ChatRoom() {
   const remoteVideoRef = useRef(null);
   const localStreamRef = useRef(null);
   const chatboxRef = useRef(null);
+  
+  // Audio Assets
+  const matchSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
+  const disconnectSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2367/2367-preview.mp3'));
 
   useEffect(() => {
     socketRef.current = io('https://mallumatch-api.onrender.com');
@@ -77,6 +81,9 @@ export default function ChatRoom() {
       setMessages([]);
       createPeerConnection();
       
+      // Play Premium Match Sound
+      matchSound.current.play().catch(e => console.log("Audio play blocked by browser."));
+      
       // Reset aura after effect duration
       setTimeout(() => setAuraActive(false), 5000);
     });
@@ -85,6 +92,9 @@ export default function ChatRoom() {
       setIsConnected(false);
       setStatus("Stranger has disconnected.");
       cleanupPeerConnection();
+      
+      // Play Premium Disconnect Sound
+      disconnectSound.current.play().catch(e => console.log("Audio play blocked by browser."));
     });
 
     socketRef.current.on('initiate_webrtc', async () => {
