@@ -4,6 +4,9 @@ import Footer from './components/Footer';
 import Home from './pages/Home';
 import ChatRoom from './pages/ChatRoom';
 import About from './pages/About';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import Contact from './pages/Contact';
 import AdminPortal from './pages/AdminPortal';
 import AgeVerification from './components/AgeVerification';
 import AnnouncementBanner from './components/AnnouncementBanner';
@@ -59,6 +62,9 @@ const AppContent = ({ ageVerified, announcement, setAnnouncement }) => {
           <Route path="/" element={<Home />} />
           <Route path="/chat" element={<ChatRoom />} />
           <Route path="/about" element={<About />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/admin-portal" element={<AdminPortal />} />
         </Routes>
       </main>
