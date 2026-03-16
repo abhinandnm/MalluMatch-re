@@ -165,12 +165,17 @@
 }
 
 .log-msg-bubble {
-  padding: 0.75rem 1.25rem;
-  border-radius: 18px;
-  font-size: 1rem;
-  line-height: 1.4;
+  padding: 0.85rem 1.35rem;
+  border-radius: 20px;
+  font-size: 0.95rem;
+  line-height: 1.5;
   word-wrap: break-word;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.log-msg-bubble:hover {
+  transform: scale(1.02);
 }
 
 .log-stranger .log-msg-bubble {
@@ -181,7 +186,7 @@
 }
 
 .log-me .log-msg-bubble {
-  background-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), #60a5fa);
   color: white;
   border-top-right-radius: 4px;
 }
@@ -367,21 +372,23 @@
 
   .video-feed.self-video {
     position: absolute;
-    bottom: 10px;
-    right: 10px;
-    width: 90px;
-    height: 120px;
+    bottom: 15px;
+    right: 15px;
+    width: 100px;
+    height: 135px;
     z-index: 20;
-    border: 2px solid rgba(255,255,255,0.3);
+    border: 3px solid #fff;
     border-radius: var(--radius-md);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-shadow: var(--shadow-lg);
+    background: #000;
   }
 
   .self-label {
-    bottom: 5px;
-    left: 5px;
-    padding: 1px 6px;
-    font-size: 0.7rem;
+    bottom: 8px;
+    left: 8px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
 
   .chat-column {

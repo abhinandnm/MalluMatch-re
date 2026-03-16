@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { Send, UserX, UserSearch, LogOut, Shield } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
+import ConnectionAura from '../components/ConnectionAura';
 import './ChatRoom.css';
 
 const iceServers = {
@@ -21,6 +22,7 @@ export default function ChatRoom() {
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [auraActive, setAuraActive] = useState(false);
   
   const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -55,9 +57,13 @@ export default function ChatRoom() {
 
     socketRef.current.on('match_found', ({ message }) => {
       setIsConnected(true);
+      setAuraActive(true);
       setStatus("You're now chatting with a random stranger! Say hi.");
       setMessages([]);
       createPeerConnection();
+      
+      // Reset aura after effect duration
+      setTimeout(() => setAuraActive(false), 5000);
     });
 
     socketRef.current.on('stranger_disconnected', ({ message }) => {
@@ -233,6 +239,7 @@ export default function ChatRoom() {
 
   return (
     <div className="chatbox-container">
+      <ConnectionAura active={auraActive} />
       
       {chatType === 'video' && (
         <div className="video-column">

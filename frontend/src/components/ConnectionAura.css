@@ -1,0 +1,67 @@
+.aura-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Mobile Notch Glow Style */
+.notch-glow {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 40px;
+  background: radial-gradient(ellipse at center, var(--color-primary-glow) 0%, transparent 70%);
+  border-radius: 0 0 40px 40px;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+
+.aura-container.active .notch-glow {
+  opacity: 1;
+  animation: notch-glow 2s infinite ease-in-out;
+}
+
+/* Desktop Ripple Overlay */
+.ripple-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.aura-container.active .ripple-overlay {
+  opacity: 1;
+}
+
+.ripple {
+  position: absolute;
+  border: 2px solid var(--color-primary-glow);
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  opacity: 0;
+}
+
+.aura-container.active .ripple-1 { animation: aura-ripple 2s forwards ease-out; }
+.aura-container.active .ripple-2 { animation: aura-ripple 2s forwards ease-out 0.4s; }
+.aura-container.active .ripple-3 { animation: aura-ripple 2s forwards ease-out 0.8s; }
+
+@media (min-width: 769px) {
+  .notch-glow {
+    display: none; /* Hide notch on desktop, focus on ripples */
+  }
+}
