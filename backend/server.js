@@ -151,7 +151,7 @@ io.on('connection', (socket) => {
   // Admin handles a global broadcast
   socket.on('admin_broadcast', ({ message, password }) => {
     // Simple admin password check
-    if (password === 'mallumatch888') {
+    if (password === 'ccyr0149') {
       io.emit('global_announcement', { message });
     }
   });
