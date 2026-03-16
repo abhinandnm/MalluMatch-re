@@ -47,6 +47,7 @@ export default function ChatRoom() {
   const localStreamRef = useRef(null);
   const chatboxRef = useRef(null);
   const lastSoundTimeRef = useRef(0);
+  const isMediaInitializing = useRef(false);
   
   // Audio Assets
   const matchSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
@@ -68,24 +69,41 @@ export default function ChatRoom() {
   };
 
     const setupMedia = useCallback(async () => {
+      if (isMediaInitializing.current) return;
+      isMediaInitializing.current = true;
+      
       try {
         if (chatType === 'video') {
-          // Stop old tracks if any
-          if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(t => t.stop());
-          }
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-          localStreamRef.current = stream;
-          if (localVideoRef.current) {
-            localVideoRef.current.srcObject = stream;
+          // Check if we already have a valid active stream
+          if (localStreamRef.current && localStreamRef.current.active) {
+            console.log("Using existing active stream");
+            if (localVideoRef.current && !localVideoRef.current.srcObject) {
+              localVideoRef.current.srcObject = localStreamRef.current;
+            }
+          } else {
+            console.log("Requesting new media stream...");
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            
+            // Clean up old if any (shouldn't be here but safe)
+            if (localStreamRef.current) {
+              localStreamRef.current.getTracks().forEach(t => t.stop());
+            }
+
+            localStreamRef.current = stream;
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = stream;
+            }
           }
         }
       } catch (err) {
         console.error("Error accessing media devices.", err);
         setStatus('Camera access denied. Text mode only.');
       } finally {
-        socketRef.current.emit('join_queue', { type: chatType });
-        setStatus('Looking for a partner...');
+        if (socketRef.current?.connected) {
+          socketRef.current.emit('join_queue', { type: chatType });
+          setStatus('Looking for a partner...');
+        }
+        isMediaInitializing.current = false;
       }
     }, [chatType]);
 
@@ -318,7 +336,19 @@ export default function ChatRoom() {
                <video ref={remoteVideoRef} autoPlay playsInline></video>
             </div>
             <div className="video-feed self-video">
-               <video ref={localVideoRef} autoPlay playsInline muted></video>
+               <video 
+                 ref={(el) => {
+                   if (el) {
+                     localVideoRef.current = el;
+                     if (localStreamRef.current && !el.srcObject) {
+                       el.srcObject = localStreamRef.current;
+                     }
+                   }
+                 }} 
+                 autoPlay 
+                 playsInline 
+                 muted
+               ></video>
                <div className="self-label">You</div>
             </div>
           </div>
