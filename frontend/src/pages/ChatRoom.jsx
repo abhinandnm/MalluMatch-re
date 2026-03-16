@@ -6,11 +6,23 @@ import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
 import './ChatRoom.css';
 
+// 🌍 Tip: Use a service like Metered.ca (Free) to get your TURN server credentials.
+// Once you have them, replace the 'turn' entry below with your provided details.
 const iceServers = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    // TURN SERVER PLACEHOLDER (Sign up on metered.ca for these)
+    /*
+    {
+      urls: "turn:YOUR_URL_HERE:443?transport=tcp",
+      username: "YOUR_USERNAME",
+      credential: "YOUR_PASSWORD"
+    }
+    */
   ],
+  iceCandidatePoolSize: 10,
 };
 
 export default function ChatRoom() {
@@ -162,6 +174,20 @@ export default function ChatRoom() {
     peerConnectionRef.current.onicecandidate = (event) => {
       if (event.candidate) {
         socketRef.current.emit('webrtc_ice_candidate', event.candidate);
+      }
+    };
+
+    peerConnectionRef.current.oniceconnectionstatechange = () => {
+      const state = peerConnectionRef.current.iceConnectionState;
+      console.log("ICE Connection State:", state);
+      if (state === 'failed' || state === 'disconnected') {
+        setStatus("Connection unstable. Trying to reconnect...");
+        // After 5s of failure, alert about firewall/NAT if still disconnected
+        setTimeout(() => {
+          if (peerConnectionRef.current?.iceConnectionState === 'failed') {
+            setStatus("Connection blocked by network firewall. Try switching to Data/WiFi.");
+          }
+        }, 5000);
       }
     };
   };
