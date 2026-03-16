@@ -145,10 +145,11 @@ export default function ChatRoom() {
         }
       });
 
-      // Initial trigger on mount
-      setupMedia();
+      // Move setupMedia call to the end of listener attachments to avoid race conditions
+      // (Originally here, now moved below all .on() calls)
 
       socketRef.current.on('match_found', ({ message }) => {
+        console.log("🎮 match_found event received!");
         setIsConnected(true);
         setAuraActive(true);
         setStatus("Partner found! Respect each other and have fun.");
@@ -159,6 +160,7 @@ export default function ChatRoom() {
         
         // Auto-hide sidebar to reveal video on match
         if (chatType === 'video') {
+          console.log("📱 Auto-hiding sidebar for video chat.");
           setShowChat(false);
         }
       });
@@ -229,6 +231,11 @@ export default function ChatRoom() {
         alert(message || 'Your IP has been banned for violating community guidelines.');
         navigate('/');
       });
+
+      // 🔥 FIXED: Attach listeners BEFORE starting media/queue to avoid missing events
+      if (socketRef.current.connected) {
+         setupMedia();
+      }
 
       return () => {
         cleanupPeerConnection();
