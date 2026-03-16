@@ -111,6 +111,16 @@ export default function ChatRoom() {
       setMessages((prev) => [...prev, msg]);
     });
 
+    socketRef.current.on('kicked', ({ message }) => {
+      alert(message || 'You have been kicked by an admin.');
+      navigate('/');
+    });
+
+    socketRef.current.on('banned', ({ message }) => {
+      alert(message || 'Your IP has been banned for violating community guidelines.');
+      navigate('/');
+    });
+
     return () => {
       cleanupPeerConnection();
       if (localStreamRef.current) {
