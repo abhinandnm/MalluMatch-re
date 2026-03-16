@@ -193,7 +193,7 @@ export default function ChatRoom() {
     
     socket.emit('report_user', { screenshot });
     setStatus('User reported. Moderation team notified.');
-    setTimeout(() => setStatus(connected ? 'Chatting with stranger...' : 'Searching...'), 3000);
+    setTimeout(() => setStatus(isConnected ? 'Chatting with stranger...' : 'Searching...'), 3000);
   };
 
   const sendMessage = (e) => {
@@ -279,6 +279,9 @@ export default function ChatRoom() {
                 </div>
               </button>
             )}
+             <button className="control-btn report-btn" onClick={reportUser} title="Report Nudity/Abuse">
+                <Layout size={16} color="#ef4444" /> {/* Use Layout as a shield-like icon or similar */}
+             </button>
              <button className="control-btn exit-btn" onClick={handleHome}>
                 <LogOut size={16} /> {/* Exit */}
              </button>
