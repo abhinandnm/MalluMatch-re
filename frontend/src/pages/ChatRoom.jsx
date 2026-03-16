@@ -334,7 +334,7 @@ export default function ChatRoom() {
         <div className="chat-control">
           <div className="btn-group-left">
             {!isConnected && status.includes('disconnected') ? (
-              <button className="control-btn next-btn" onClick={handleNext}>
+              <button className="control-btn next-btn" onClick={() => { playSfx(tapSound); handleNext(); }}>
                 <UserSearch size={20} />
                 <div className="btn-labels">
                   <span className="btn-title">New</span>
@@ -342,7 +342,7 @@ export default function ChatRoom() {
                 </div>
               </button>
             ) : (
-              <button className="control-btn stop-btn" onClick={handleStop} disabled={!isConnected && !status.includes('Looking')}>
+              <button className="control-btn stop-btn" onClick={() => { playSfx(tapSound); handleStop(); }} disabled={!isConnected && !status.includes('Looking')}>
                 <UserX size={20} />
                 <div className="btn-labels">
                   <span className="btn-title">Stop</span>
@@ -350,11 +350,11 @@ export default function ChatRoom() {
                 </div>
               </button>
             )}
-             <button className="control-btn report-btn" onClick={reportUser} title="Report Nudity/Abuse">
+             <button className="control-btn report-btn" onClick={() => { playSfx(tapSound); reportUser(); }} title="Report Nudity/Abuse">
                 <Shield size={16} color="#ef4444" />
                 <span className="report-label">Report</span>
              </button>
-             <button className="control-btn exit-btn" onClick={handleHome}>
+             <button className="control-btn exit-btn" onClick={() => { playSfx(tapSound); handleHome(); }}>
                 <LogOut size={16} /> {/* Exit */}
              </button>
           </div>
@@ -371,7 +371,7 @@ export default function ChatRoom() {
           </div>
           
           <div className="btn-group-right">
-             <button className="control-btn send-btn" onClick={sendMessage} disabled={!isConnected || !inputMsg.trim()}>
+             <button className="control-btn send-btn" onClick={(e) => { playSfx(tapSound); sendMessage(e); }} disabled={!isConnected || !inputMsg.trim()}>
                 <Send size={20} className="send-icon" />
              </button>
           </div>
