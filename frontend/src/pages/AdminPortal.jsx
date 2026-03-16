@@ -118,7 +118,11 @@ export default function AdminPortal() {
                {reports.map(r => (
                   <div key={r.id} className="report-card">
                      <div className="report-img">
-                        <img src={r.screenshot} alt="Evidence" />
+                        {r.screenshot ? (
+                          <img src={r.screenshot} alt="Evidence" />
+                        ) : (
+                          <div className="no-evidence">Text Chat Report<br/><span>(No Video)</span></div>
+                        )}
                      </div>
                      <div className="report-info">
                         <div className="report-meta">

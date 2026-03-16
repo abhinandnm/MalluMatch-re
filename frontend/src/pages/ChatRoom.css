@@ -275,6 +275,17 @@
   color: rgba(255,255,255,0.7);
 }
 
+.report-btn {
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
+
+.report-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ef4444;
+}
+
 .exit-btn {
   width: 48px;
   color: var(--color-text-muted);

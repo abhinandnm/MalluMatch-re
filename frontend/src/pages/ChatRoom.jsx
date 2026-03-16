@@ -180,18 +180,19 @@ export default function ChatRoom() {
   };
 
   const reportUser = () => {
-    if (!remoteVideoRef.current) return;
+    let screenshot = null;
+
+    if (remoteVideoRef.current && remoteVideoRef.current.videoWidth > 0) {
+      // Capture a snapshot of the remote video if available
+      const canvas = document.createElement('canvas');
+      canvas.width = remoteVideoRef.current.videoWidth || 640;
+      canvas.height = remoteVideoRef.current.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(remoteVideoRef.current, 0, 0, canvas.width, canvas.height);
+      screenshot = canvas.toDataURL('image/webp', 0.5); // Compressed screenshot
+    }
     
-    // Capture a snapshot of the remote video
-    const canvas = document.createElement('canvas');
-    canvas.width = remoteVideoRef.current.videoWidth || 640;
-    canvas.height = remoteVideoRef.current.videoHeight || 480;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(remoteVideoRef.current, 0, 0, canvas.width, canvas.height);
-    
-    const screenshot = canvas.toDataURL('image/webp', 0.5); // Compressed screenshot
-    
-    socket.emit('report_user', { screenshot });
+    socketRef.current.emit('report_user', { screenshot });
     setStatus('User reported. Moderation team notified.');
     setTimeout(() => setStatus(isConnected ? 'Chatting with stranger...' : 'Searching...'), 3000);
   };
@@ -280,7 +281,8 @@ export default function ChatRoom() {
               </button>
             )}
              <button className="control-btn report-btn" onClick={reportUser} title="Report Nudity/Abuse">
-                <Shield size={16} color="#ef4444" /> {/* Use Shield for reports */}
+                <Shield size={16} color="#ef4444" />
+                <span className="report-label">Report</span>
              </button>
              <button className="control-btn exit-btn" onClick={handleHome}>
                 <LogOut size={16} /> {/* Exit */}
