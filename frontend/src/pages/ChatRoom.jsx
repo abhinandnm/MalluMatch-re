@@ -54,10 +54,10 @@ export default function ChatRoom() {
   const tapSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'));
   const reportSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2361/2361-preview.mp3'));
   const alertSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2356/2356-preview.mp3'));
-  const receiveSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2359/2359-preview.mp3'));
+  const receiveSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'));
 
   const playSfx = (audioRef) => {
-    if (!audioRef.current) return;
+    if (!audioRef || !audioRef.current) return;
     audioRef.current.currentTime = 0;
     audioRef.current.play().catch(e => console.log("Audio blocked."));
   };
@@ -279,7 +279,7 @@ export default function ChatRoom() {
       const msgObj = { sender: 'me', text: inputMsg };
       setMessages((prev) => [...prev, msgObj]);
       socketRef.current.emit('chat_message', inputMsg);
-      playSfx(receiveSound);
+      playSfx(receiveSound); // The single "bop"
       setInputMsg('');
     }
   };
@@ -383,7 +383,7 @@ export default function ChatRoom() {
                onKeyDown={handleKeyDown}
                placeholder={isConnected ? "Send a message..." : "Waiting..."}
              ></textarea>
-             <button className="sidebar-send-btn" onClick={(e) => { playSfx(tapSound); sendMessage(e); }} disabled={!isConnected || !inputMsg.trim()}>
+             <button className="sidebar-send-btn" onClick={(e) => { sendMessage(e); }} disabled={!isConnected || !inputMsg.trim()}>
                 <Send size={18} />
              </button>
           </div>
