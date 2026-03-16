@@ -83,6 +83,56 @@
   padding: 1rem;
 }
 
+.stat-row span {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.ban-management {
+  margin-top: 2rem;
+  border-top: 1px solid var(--color-border);
+  padding-top: 2rem;
+}
+
+.ban-management h3 {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ban-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ban-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  border: 1px solid var(--color-border);
+}
+
+.unban-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.unban-btn:hover {
+  background: #fef2f2;
+}
+
 .report-meta {
   font-size: 0.85rem;
   color: var(--color-text-muted);

@@ -174,7 +174,11 @@ io.on('connection', (socket) => {
   socket.on('admin_auth', ({ password }) => {
     if (password === 'ccyr0149') {
       admins.add(socket.id);
-      socket.emit('admin_auth_success', { reports, liveLogs });
+      socket.emit('admin_auth_success', { 
+        reports, 
+        liveLogs, 
+        bannedIPs: Array.from(bannedIPs) 
+      });
     }
   });
 
@@ -182,6 +186,15 @@ io.on('connection', (socket) => {
     if (password === 'ccyr0149') {
       io.emit('global_announcement', { message });
     }
+  });
+
+  socket.on('admin_unban', ({ ip }) => {
+    if (!admins.has(socket.id)) return;
+    bannedIPs.delete(ip);
+    // Notify all admins of the update
+    admins.forEach(adminId => {
+      io.to(adminId).emit('update_banned_ips', Array.from(bannedIPs));
+    });
   });
 
   socket.on('report_user', ({ screenshot }) => {
@@ -236,6 +249,10 @@ io.on('connection', (socket) => {
           }
        }
     }
+    // Notify all admins of the update
+    admins.forEach(adminId => {
+      io.to(adminId).emit('update_banned_ips', Array.from(bannedIPs));
+    });
   });
 
   socket.on('disconnect', () => {

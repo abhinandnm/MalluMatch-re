@@ -10,16 +10,18 @@ export default function AdminPortal() {
   const [status, setStatus] = useState('');
   const [reports, setReports] = useState([]);
   const [logs, setLogs] = useState([]);
+  const [bannedIPs, setBannedIPs] = useState([]);
   const socketRef = useRef(null);
   const logEndRef = useRef(null);
 
   useEffect(() => {
     socketRef.current = io('https://mallumatch-api.onrender.com');
     
-    socketRef.current.on('admin_auth_success', ({ reports, liveLogs }) => {
+    socketRef.current.on('admin_auth_success', ({ reports, liveLogs, bannedIPs }) => {
       setIsAuth(true);
       setReports(reports);
       setLogs(liveLogs);
+      setBannedIPs(bannedIPs || []);
     });
 
     socketRef.current.on('new_report', (report) => {
@@ -28,6 +30,10 @@ export default function AdminPortal() {
 
     socketRef.current.on('live_chat_log', (log) => {
        setLogs(prev => [...prev.slice(-99), log]);
+    });
+
+    socketRef.current.on('update_banned_ips', (updatedList) => {
+       setBannedIPs(updatedList);
     });
 
     return () => {
@@ -57,6 +63,10 @@ export default function AdminPortal() {
 
   const handleBan = (targetIP, targetId) => {
     socketRef.current.emit('admin_ban', { targetIP, targetId });
+  };
+
+  const handleUnban = (ip) => {
+    socketRef.current.emit('admin_unban', { ip });
   };
 
   if (!isAuth) {
@@ -107,6 +117,20 @@ export default function AdminPortal() {
          <div className="live-stats">
             <h3>Live Stats</h3>
             <div className="stat-row">Active Reports: <span>{reports.length}</span></div>
+            <div className="stat-row">Banned IPs: <span>{bannedIPs.length}</span></div>
+         </div>
+
+         <div className="ban-management">
+            <h3>Banned IPs</h3>
+            <div className="ban-list">
+               {bannedIPs.length === 0 && <p className="empty-msg">No banned IPs.</p>}
+               {bannedIPs.map(ip => (
+                  <div key={ip} className="ban-item">
+                     <span>{ip}</span>
+                     <button onClick={() => handleUnban(ip)} className="unban-btn">Unban</button>
+                  </div>
+               ))}
+            </div>
          </div>
       </div>
 
