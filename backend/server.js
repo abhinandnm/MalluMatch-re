@@ -148,6 +148,14 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Admin handles a global broadcast
+  socket.on('admin_broadcast', ({ message, password }) => {
+    // Simple admin password check
+    if (password === 'mallumatch888') {
+      io.emit('global_announcement', { message });
+    }
+  });
+
   socket.on('disconnect', () => {
     onlineUsers--;
     io.emit('online_users', onlineUsers);

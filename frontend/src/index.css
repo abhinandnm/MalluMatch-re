@@ -188,3 +188,13 @@ footer {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8; 
 }
+
+/* Helper for shifts when banner is active */
+.app-container.has-announcement header {
+  top: 50px; /* Shift the sticky header down when banner is present */
+}
+@media (max-width: 640px) {
+  .app-container.has-announcement header {
+    top: 60px;
+  }
+}
