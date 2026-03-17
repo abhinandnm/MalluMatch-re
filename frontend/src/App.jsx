@@ -33,8 +33,6 @@ const AppWrapper = () => {
 
   return (
     <Router>
-      {!ageVerified && <AgeVerification onVerify={() => setAgeVerified(true)} />}
-      
       {announcement && (
         <AnnouncementBanner 
           message={announcement} 
@@ -44,6 +42,7 @@ const AppWrapper = () => {
 
       <AppContent 
         ageVerified={ageVerified} 
+        setAgeVerified={setAgeVerified}
         announcement={announcement} 
         setAnnouncement={setAnnouncement} 
       />
@@ -51,12 +50,14 @@ const AppWrapper = () => {
   );
 };
 
-const AppContent = ({ ageVerified, announcement, setAnnouncement }) => {
+const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement }) => {
   const location = useLocation();
   const isChatPage = location.pathname === '/chat';
+  const isAdminPage = location.pathname === '/admin-portal';
 
   return (
-    <div className={`app-container ${!ageVerified ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>
+    <div className={`app-container ${(!ageVerified && !isAdminPage) ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>
+      {!ageVerified && !isAdminPage && <AgeVerification onVerify={() => setAgeVerified(true)} />}
       <Navbar />
       <main className={`main-content ${isChatPage ? 'no-padding' : ''}`}>
         <Routes>
