@@ -309,3 +309,37 @@
     border-bottom: 1px solid var(--color-border);
   }
 }
+
+/* Safety Alert Styles */
+.safety-alerts {
+  background: #fff1f2;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid #fecdd3;
+}
+
+.safety-img {
+  position: relative;
+}
+
+.safety-tag {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: #ef4444;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.report-actions .dismiss {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.report-actions .dismiss:hover {
+  background: #cbd5e1;
+}

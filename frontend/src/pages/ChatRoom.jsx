@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import socket from '../socket';
-import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info, Wand2 } from 'lucide-react';
+import * as nsfwjs from 'nsfwjs';
+import * as tf from '@tensorflow/tfjs';
+import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info, Wand2, AlertTriangle } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
 import './ChatRoom.css';
@@ -44,6 +46,10 @@ export default function ChatRoom() {
   const [selectedFilter, setSelectedFilter] = useState('none');
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [safetyViolation, setSafetyViolation] = useState(false);
+  const [modelLoading, setModelLoading] = useState(false);
+  const nsfwModelRef = useRef(null);
+  const checkIntervalRef = useRef(null);
 
   const FILTERS = [
     { id: 'none', label: 'None', color: '#64748b' },
@@ -121,6 +127,9 @@ export default function ChatRoom() {
       console.error("❌ Fatal media error:", err);
       setStatus('Camera access denied. Text mode only.');
     } finally {
+      if (chatType === 'video' && !nsfwModelRef.current) {
+        loadSafetyModel();
+      }
       if (socket.connected) {
         console.log("🚀 Emitting join_queue...");
         socket.emit('join_queue', { type: chatType });
@@ -131,6 +140,78 @@ export default function ChatRoom() {
       isMediaInitializing.current = false;
     }
   }, [chatType]);
+  const loadSafetyModel = async () => {
+    try {
+      setModelLoading(true);
+      // Wait for TFJS to be ready
+      await tf.ready();
+      const model = await nsfwjs.load('/model/', { type: 'graph' }); // We'll need to host the model or use a CDN
+      // If local load fails, try CDN
+      // const model = await nsfwjs.load(); 
+      nsfwModelRef.current = model;
+      console.log("🛡️ Safety model loaded.");
+    } catch (err) {
+      console.warn("⚠️ Local model load failed, trying CDN...", err);
+      try {
+        nsfwModelRef.current = await nsfwjs.load();
+        console.log("🛡️ Safety model loaded from CDN.");
+      } catch (cdnErr) {
+        console.error("❌ Failed to load safety model:", cdnErr);
+      }
+    } finally {
+      setModelLoading(false);
+    }
+  };
+
+  const checkVideoSafety = async () => {
+    if (!nsfwModelRef.current || !localVideoRef.current || chatType !== 'video' || !isConnected) return;
+
+    try {
+      const predictions = await nsfwModelRef.current.classify(localVideoRef.current);
+      const inappropriate = predictions.find(p => 
+        (p.className === 'Porn' || p.className === 'Hentai' || p.className === 'Sexy') && p.probability > 0.7
+      );
+
+      if (inappropriate) {
+        console.error("🚨 Safety violation detected:", inappropriate.className);
+        handleViolation(inappropriate.className);
+      }
+    } catch (err) {
+      console.error("Error during safety check:", err);
+    }
+  };
+
+  const handleViolation = (reason) => {
+    setSafetyViolation(true);
+    setStatus("SESSION TERMINATED: Community Guidelines Violation.");
+    
+    // Capture evidence
+    const canvas = document.createElement('canvas');
+    canvas.width = localVideoRef.current.videoWidth;
+    canvas.height = localVideoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(localVideoRef.current, 0, 0);
+    const evidence = canvas.toDataURL('image/jpeg', 0.5);
+
+    socket.emit('report_safety_violation', { evidence, reason });
+    
+    // Disconnect and Cleanup
+    setTimeout(() => {
+      handleStop();
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+    }, 1000);
+  };
+
+  useEffect(() => {
+    if (isConnected && chatType === 'video' && nsfwModelRef.current) {
+      checkIntervalRef.current = setInterval(checkVideoSafety, 1500);
+    }
+    return () => {
+      if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
+    };
+  }, [isConnected, chatType]);
 
     useEffect(() => {
       console.log("⚡ ChatRoom Effect Initializing...");
@@ -258,6 +339,7 @@ export default function ChatRoom() {
       socket.off('chat_message');
       socket.off('kicked');
       socket.off('banned');
+      if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
     };
     }, [chatType, setupMedia]);
 
@@ -359,7 +441,7 @@ export default function ChatRoom() {
       screenshot = canvas.toDataURL('image/webp', 0.5); // Compressed screenshot
     }
     
-    socketRef.current.emit('report_user', { screenshot });
+    socket.emit('report_user', { screenshot });
     playSfx(reportSound);
     setStatus('User reported. Moderation team notified.');
     setTimeout(() => setStatus(isConnected ? 'Chatting with stranger...' : 'Searching...'), 3000);
@@ -399,6 +481,7 @@ export default function ChatRoom() {
           <div className="video-column meet-style">
              <div className="video-feed stranger-video">
                 {!isConnected && <div className="video-status">Waiting for partner...</div>}
+                {safetyViolation && <div className="safety-overlay"><AlertTriangle size={48} /><span>Violated Guidelines</span></div>}
                 {!isConnected && status.includes('denied') && (
                   <button className="premium-btn" onClick={() => setupMedia()} style={{ marginTop: '1rem' }}>
                     Retry Camera

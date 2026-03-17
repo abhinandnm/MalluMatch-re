@@ -19,6 +19,8 @@ const bannedIPs = new Set();
 const reports = [];
 const liveLogs = []; // Feed of all text messages
 const admins = new Set();
+const safetyViolations = [];
+const userStrikes = new Map(); // IP -> count
 
 class MatchMaker {
   constructor() {
@@ -189,9 +191,56 @@ io.on('connection', (socket) => {
         reports, 
         liveLogs, 
         bannedIPs: Array.from(bannedIPs),
-        userCountSettings
+        userCountSettings,
+        safetyViolations
       });
     }
+  });
+
+  socket.on('report_safety_violation', ({ evidence, reason }) => {
+    const ip = matchMaker.userIPs.get(socket.id);
+    const violation = {
+      id: Date.now(),
+      userId: socket.id,
+      userIP: ip,
+      evidence,
+      reason,
+      timestamp: new Date().toLocaleTimeString()
+    };
+
+    safetyViolations.push(violation);
+    if (safetyViolations.length > 50) safetyViolations.shift();
+
+    admins.forEach(adminId => {
+      io.to(adminId).emit('new_safety_alert', violation);
+    });
+  });
+
+  socket.on('admin_handle_safety_violation', ({ violationId, action, password }) => {
+    if (password !== 'ccyr0149') return;
+
+    const index = safetyViolations.findIndex(v => v.id === violationId);
+    if (index === -1) return;
+
+    const violation = safetyViolations[index];
+
+    if (action === 'ban') {
+      bannedIPs.add(violation.userIP);
+      const targetSocket = io.sockets.sockets.get(violation.userId);
+      if (targetSocket) {
+        targetSocket.emit('banned', { message: 'Your IP has been banned for safety violations.' });
+        targetSocket.disconnect();
+      }
+    }
+
+    safetyViolations.splice(index, 1);
+    
+    admins.forEach(adminId => {
+      io.to(adminId).emit('update_safety_violations', safetyViolations);
+      if (action === 'ban') {
+        io.to(adminId).emit('update_banned_ips', Array.from(bannedIPs));
+      }
+    });
   });
 
   socket.on('admin_update_user_count', ({ settings, password }) => {

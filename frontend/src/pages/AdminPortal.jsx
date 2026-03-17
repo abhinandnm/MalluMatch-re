@@ -11,16 +11,18 @@ export default function AdminPortal() {
   const [reports, setReports] = useState([]);
   const [logs, setLogs] = useState([]);
   const [bannedIPs, setBannedIPs] = useState([]);
+  const [safetyViolations, setSafetyViolations] = useState([]);
   const [userCountSettings, setUserCountSettings] = useState({ customCount: 100, mode: 'realtime' });
   const [tempCustomCount, setTempCustomCount] = useState(100);
   const logEndRef = useRef(null);
 
   useEffect(() => {
-    socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings }) => {
+    socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings, safetyViolations }) => {
       setIsAuth(true);
       setReports(reports);
       setLogs(liveLogs);
       setBannedIPs(bannedIPs || []);
+      setSafetyViolations(safetyViolations || []);
       if (userCountSettings) {
         setUserCountSettings(userCountSettings);
         setTempCustomCount(userCountSettings.customCount);
@@ -44,12 +46,22 @@ export default function AdminPortal() {
       setTempCustomCount(settings.customCount);
     });
 
+    socket.on('new_safety_alert', (violation) => {
+       setSafetyViolations(prev => [violation, ...prev]);
+    });
+
+    socket.on('update_safety_violations', (updatedList) => {
+       setSafetyViolations(updatedList);
+    });
+
     return () => {
       socket.off('admin_auth_success');
       socket.off('new_report');
       socket.off('live_chat_log');
       socket.off('update_banned_ips');
       socket.off('update_user_count_settings');
+      socket.off('new_safety_alert');
+      socket.off('update_safety_violations');
     };
   }, []);
 
@@ -83,6 +95,10 @@ export default function AdminPortal() {
 
   const handleUpdateUserCount = (newSettings) => {
     socket.emit('admin_update_user_count', { settings: newSettings, password });
+  };
+
+  const handleSafetyAction = (violationId, action) => {
+    socket.emit('admin_handle_safety_violation', { violationId, action, password });
   };
 
   if (!isAuth) {
@@ -180,6 +196,32 @@ export default function AdminPortal() {
       </div>
 
       <div className="dash-main">
+         <section className="reports-section safety-alerts">
+            <h2><AlertTriangle size={22} color="#ef4444" /> AI Safety Alerts (Critical)</h2>
+            <div className="reports-grid">
+               {safetyViolations.length === 0 && <p className="empty-msg">No safety violations detected.</p>}
+               {safetyViolations.map(v => (
+                  <div key={v.id} className="report-card safety-card">
+                     <div className="report-img safety-img">
+                        <img src={v.evidence} alt="Evidence" />
+                        <div className="safety-tag">{v.reason}</div>
+                     </div>
+                     <div className="report-info">
+                        <div className="report-meta">
+                           <strong>Offender:</strong> {v.userId.substring(0,8)}<br/>
+                           <strong>IP:</strong> {v.userIP}<br/>
+                           <strong>Time:</strong> {v.timestamp}
+                        </div>
+                        <div className="report-actions">
+                           <button onClick={() => handleSafetyAction(v.id, 'ban')} className="action-btn ban">Ban IP</button>
+                           <button onClick={() => handleSafetyAction(v.id, 'dismiss')} className="action-btn dismiss">Dismiss</button>
+                        </div>
+                     </div>
+                  </div>
+               ))}
+            </div>
+         </section>
+
          <section className="reports-section">
             <h2><Shield size={22} color="#ef4444" /> Recent Reports</h2>
             <div className="reports-grid">
