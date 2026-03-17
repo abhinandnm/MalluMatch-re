@@ -11,17 +11,23 @@ export default function AdminPortal() {
   const [reports, setReports] = useState([]);
   const [logs, setLogs] = useState([]);
   const [bannedIPs, setBannedIPs] = useState([]);
+  const [userCountSettings, setUserCountSettings] = useState({ customCount: 100, mode: 'realtime' });
+  const [tempCustomCount, setTempCustomCount] = useState(100);
   const socketRef = useRef(null);
   const logEndRef = useRef(null);
 
   useEffect(() => {
     socketRef.current = io('https://mallumatch-api.onrender.com');
     
-    socketRef.current.on('admin_auth_success', ({ reports, liveLogs, bannedIPs }) => {
+    socketRef.current.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings }) => {
       setIsAuth(true);
       setReports(reports);
       setLogs(liveLogs);
       setBannedIPs(bannedIPs || []);
+      if (userCountSettings) {
+        setUserCountSettings(userCountSettings);
+        setTempCustomCount(userCountSettings.customCount);
+      }
     });
 
     socketRef.current.on('new_report', (report) => {
@@ -34,6 +40,11 @@ export default function AdminPortal() {
 
     socketRef.current.on('update_banned_ips', (updatedList) => {
        setBannedIPs(updatedList);
+    });
+
+    socketRef.current.on('update_user_count_settings', (settings) => {
+      setUserCountSettings(settings);
+      setTempCustomCount(settings.customCount);
     });
 
     return () => {
@@ -67,6 +78,10 @@ export default function AdminPortal() {
 
   const handleUnban = (ip) => {
     socketRef.current.emit('admin_unban', { ip });
+  };
+
+  const handleUpdateUserCount = (newSettings) => {
+    socketRef.current.emit('admin_update_user_count', { settings: newSettings, password });
   };
 
   if (!isAuth) {
@@ -113,6 +128,35 @@ export default function AdminPortal() {
            <button type="submit" className="blast-btn">Blast</button>
            {status && <p className="status-mini">{status}</p>}
          </form>
+
+         <div className="user-count-control">
+            <h3>User Count Control</h3>
+            <div className="control-group">
+               <label>Display Mode</label>
+               <div className="mode-toggle">
+                  <button 
+                    className={userCountSettings.mode === 'realtime' ? 'active' : ''}
+                    onClick={() => handleUpdateUserCount({ mode: 'realtime' })}
+                  >Realtime</button>
+                  <button 
+                    className={userCountSettings.mode === 'custom' ? 'active' : ''}
+                    onClick={() => handleUpdateUserCount({ mode: 'custom' })}
+                  >Custom</button>
+               </div>
+            </div>
+            
+            <div className="control-group">
+               <label>Custom Number</label>
+               <div className="input-with-btn">
+                  <input 
+                    type="number" 
+                    value={tempCustomCount}
+                    onChange={(e) => setTempCustomCount(parseInt(e.target.value) || 0)}
+                  />
+                  <button onClick={() => handleUpdateUserCount({ customCount: tempCustomCount })}>Set</button>
+               </div>
+            </div>
+         </div>
 
          <div className="live-stats">
             <h3>Live Stats</h3>

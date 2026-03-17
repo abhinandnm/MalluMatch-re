@@ -113,10 +113,21 @@ class MatchMaker {
 const matchMaker = new MatchMaker();
 
 let onlineUsers = 0;
+let userCountSettings = {
+  customCount: 100,
+  mode: 'realtime' // 'realtime' or 'custom'
+};
+
+const broadcastUserCount = () => {
+  const displayCount = userCountSettings.mode === 'custom' 
+    ? userCountSettings.customCount 
+    : onlineUsers;
+  io.emit('online_users', { count: displayCount });
+};
 
 io.on('connection', (socket) => {
   onlineUsers++;
-  io.emit('online_users', onlineUsers);
+  broadcastUserCount();
 
   socket.on('join_queue', ({ type }) => {
     matchMaker.addUser(socket, type);
@@ -177,7 +188,19 @@ io.on('connection', (socket) => {
       socket.emit('admin_auth_success', { 
         reports, 
         liveLogs, 
-        bannedIPs: Array.from(bannedIPs) 
+        bannedIPs: Array.from(bannedIPs),
+        userCountSettings
+      });
+    }
+  });
+
+  socket.on('admin_update_user_count', ({ settings, password }) => {
+    if (password === 'ccyr0149') {
+      userCountSettings = { ...userCountSettings, ...settings };
+      broadcastUserCount();
+      // Notify all admins of the update
+      admins.forEach(adminId => {
+        io.to(adminId).emit('update_user_count_settings', userCountSettings);
       });
     }
   });
@@ -257,7 +280,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     onlineUsers--;
-    io.emit('online_users', onlineUsers);
+    broadcastUserCount();
     matchMaker.handleDisconnect(socket);
     admins.delete(socket.id);
   });
