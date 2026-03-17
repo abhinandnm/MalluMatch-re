@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin-portal
+
+Sitemap: https://mallu-match.vercel.app/sitemap.xml
