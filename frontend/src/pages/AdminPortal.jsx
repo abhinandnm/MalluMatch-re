@@ -238,6 +238,7 @@ export default function AdminPortal() {
                         <div className="report-info">
                            <div className="report-meta">
                               <strong>Target:</strong> {r.offenderId?.substring(0, 6) || 'Unknown'}...<br />
+                              <strong>Reason:</strong> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{r.comment || 'N/A'}</span><br />
                               <strong>IP:</strong> {r.offenderIP}<br />
                               <strong>Time:</strong> {r.timestamp}
                            </div>

@@ -427,6 +427,9 @@ export default function ChatRoom() {
   const reportUser = () => {
     let screenshot = null;
 
+    const comment = window.prompt("Why are you reporting this user? (Optional)");
+    if (comment === null) return; // Cancelled
+
     if (remoteVideoRef.current && remoteVideoRef.current.videoWidth > 0) {
       // Capture a snapshot of the remote video if available
       const canvas = document.createElement('canvas');
@@ -437,7 +440,7 @@ export default function ChatRoom() {
       screenshot = canvas.toDataURL('image/webp', 0.5); // Compressed screenshot
     }
     
-    socket.emit('report_user', { screenshot });
+    socket.emit('report_user', { screenshot, comment: comment || "No reason provided" });
     playSfx(reportSound);
     setStatus('User reported. Moderation team notified.');
     setTimeout(() => setStatus(isConnected ? 'Chatting with stranger...' : 'Searching...'), 3000);

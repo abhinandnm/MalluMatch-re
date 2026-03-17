@@ -269,7 +269,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  socket.on('report_user', ({ screenshot }) => {
+  socket.on('report_user', ({ screenshot, comment }) => {
     const roomId = matchMaker.userRooms.get(socket.id);
     if (!roomId) return;
     
@@ -285,6 +285,7 @@ io.on('connection', (socket) => {
       offenderIP: partnerIP,
       reporterId: socket.id,
       screenshot,
+      comment: comment || "No reason specified",
       timestamp: new Date().toLocaleTimeString()
     };
 
