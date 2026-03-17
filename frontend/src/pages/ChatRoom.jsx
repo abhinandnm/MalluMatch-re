@@ -478,6 +478,15 @@ export default function ChatRoom() {
       <div className="main-content-stage">
         {chatType === 'video' && (
           <div className="video-column meet-style">
+             <div className="safety-announcement-sidebar">
+                <div className="warning-header">⚠️ WARNING</div>
+                <div className="warning-body">
+                  <p>Any abuse or inappropriate behavior will be recorded and may be shared with our official platforms and authorities.</p>
+                  <p className="strict-action">Strict action will be taken.</p>
+                  <p>You are not anonymous.</p>
+                  <p className="behave-text">Behave.</p>
+                </div>
+             </div>
              <div className="video-feed stranger-video">
                 {!isConnected && <div className="video-status">Waiting for partner...</div>}
                 {safetyViolation && <div className="safety-overlay"><AlertTriangle size={48} /><span>Violated Guidelines</span></div>}
