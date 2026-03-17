@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
+import socket from '../socket';
 import { Send, Lock, BellRing, Shield } from 'lucide-react';
 import './AdminPortal.css';
 
@@ -13,13 +13,10 @@ export default function AdminPortal() {
   const [bannedIPs, setBannedIPs] = useState([]);
   const [userCountSettings, setUserCountSettings] = useState({ customCount: 100, mode: 'realtime' });
   const [tempCustomCount, setTempCustomCount] = useState(100);
-  const socketRef = useRef(null);
   const logEndRef = useRef(null);
 
   useEffect(() => {
-    socketRef.current = io('https://mallumatch-api.onrender.com');
-    
-    socketRef.current.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings }) => {
+    socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings }) => {
       setIsAuth(true);
       setReports(reports);
       setLogs(liveLogs);
@@ -30,25 +27,29 @@ export default function AdminPortal() {
       }
     });
 
-    socketRef.current.on('new_report', (report) => {
+    socket.on('new_report', (report) => {
        setReports(prev => [report, ...prev]);
     });
 
-    socketRef.current.on('live_chat_log', (log) => {
+    socket.on('live_chat_log', (log) => {
        setLogs(prev => [...prev.slice(-99), log]);
     });
 
-    socketRef.current.on('update_banned_ips', (updatedList) => {
+    socket.on('update_banned_ips', (updatedList) => {
        setBannedIPs(updatedList);
     });
 
-    socketRef.current.on('update_user_count_settings', (settings) => {
+    socket.on('update_user_count_settings', (settings) => {
       setUserCountSettings(settings);
       setTempCustomCount(settings.customCount);
     });
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      socket.off('admin_auth_success');
+      socket.off('new_report');
+      socket.off('live_chat_log');
+      socket.off('update_banned_ips');
+      socket.off('update_user_count_settings');
     };
   }, []);
 
@@ -58,30 +59,30 @@ export default function AdminPortal() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    socketRef.current.emit('admin_auth', { password });
+    socket.emit('admin_auth', { password });
   };
 
   const handleBroadcast = (e) => {
     e.preventDefault();
-    socketRef.current.emit('admin_broadcast', { message, password });
+    socket.emit('admin_broadcast', { message, password });
     setStatus('Announcement sent!');
     setMessage('');
   };
 
   const handleKick = (targetId) => {
-    socketRef.current.emit('admin_kick', { targetId });
+    socket.emit('admin_kick', { targetId });
   };
 
   const handleBan = (targetIP, targetId) => {
-    socketRef.current.emit('admin_ban', { targetIP, targetId });
+    socket.emit('admin_ban', { targetIP, targetId });
   };
 
   const handleUnban = (ip) => {
-    socketRef.current.emit('admin_unban', { ip });
+    socket.emit('admin_unban', { ip });
   };
 
   const handleUpdateUserCount = (newSettings) => {
-    socketRef.current.emit('admin_update_user_count', { settings: newSettings, password });
+    socket.emit('admin_update_user_count', { settings: newSettings, password });
   };
 
   if (!isAuth) {

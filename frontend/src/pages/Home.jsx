@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { io } from 'socket.io-client';
+import socket from '../socket';
 import { Video, MessageSquare, Shield, Users, Zap } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
 import './Home.css';
@@ -10,12 +10,13 @@ export default function Home() {
   const [onlineCount, setOnlineCount] = useState(0);
 
   useEffect(() => {
-    const socket = io('https://mallumatch-api.onrender.com');
     socket.on('online_users', (data) => {
       setOnlineCount(typeof data === 'object' ? data.count : data);
     });
     
-    return () => socket.disconnect();
+    return () => {
+      socket.off('online_users');
+    };
   }, []);
 
   const handleStart = (type) => {

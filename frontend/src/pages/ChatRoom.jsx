@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
+import socket from '../socket';
 import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info, Wand2 } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
@@ -55,7 +55,6 @@ export default function ChatRoom() {
     { id: 'alien', label: 'Alien', color: '#22c55e' }
   ];
   
-  const socketRef = useRef(null);
   const peerConnectionRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -122,9 +121,9 @@ export default function ChatRoom() {
       console.error("❌ Fatal media error:", err);
       setStatus('Camera access denied. Text mode only.');
     } finally {
-      if (socketRef.current?.connected) {
+      if (socket.connected) {
         console.log("🚀 Emitting join_queue...");
-        socketRef.current.emit('join_queue', { type: chatType });
+        socket.emit('join_queue', { type: chatType });
         setStatus('Looking for a partner...');
       } else {
         console.log("⏳ Socket not connected, will join on connect.");
@@ -135,21 +134,26 @@ export default function ChatRoom() {
 
     useEffect(() => {
       console.log("⚡ ChatRoom Effect Initializing...");
-      socketRef.current = io('https://mallumatch-api.onrender.com');
       
-      socketRef.current.on('connect', () => {
+      const onConnect = () => {
         console.log("🔗 Socket connected.");
         if (!isMediaInitializing.current && (!localStreamRef.current || !localStreamRef.current.active)) {
            setupMedia();
-        } else if (socketRef.current.connected) {
-           socketRef.current.emit('join_queue', { type: chatType });
+        } else if (socket.connected) {
+           socket.emit('join_queue', { type: chatType });
         }
-      });
+      };
+
+      socket.on('connect', onConnect);
+      
+      if (socket.connected) {
+        onConnect();
+      }
 
       // Move setupMedia call to the end of listener attachments to avoid race conditions
       // (Originally here, now moved below all .on() calls)
 
-      socketRef.current.on('match_found', ({ message }) => {
+      socket.on('match_found', ({ message }) => {
         console.log("🎮 match_found event received!");
         setIsConnected(true);
         setAuraActive(true);
@@ -166,37 +170,37 @@ export default function ChatRoom() {
         }
       });
 
-      socketRef.current.on('stranger_disconnected', ({ message }) => {
+      socket.on('stranger_disconnected', ({ message }) => {
         setIsConnected(false);
         setStatus("Stranger has disconnected.");
         cleanupPeerConnection();
         playSfx(disconnectSound);
       });
 
-      socketRef.current.on('initiate_webrtc', async () => {
+      socket.on('initiate_webrtc', async () => {
         if (!peerConnectionRef.current) return;
         try {
           const offer = await peerConnectionRef.current.createOffer();
           await peerConnectionRef.current.setLocalDescription(offer);
-          socketRef.current.emit('webrtc_offer', offer);
+          socket.emit('webrtc_offer', offer);
         } catch (err) {
           console.error("Error creating offer", err);
         }
       });
 
-      socketRef.current.on('webrtc_offer', async (offer) => {
+      socket.on('webrtc_offer', async (offer) => {
         if (!peerConnectionRef.current) return;
         try {
           await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(offer));
           const answer = await peerConnectionRef.current.createAnswer();
           await peerConnectionRef.current.setLocalDescription(answer);
-          socketRef.current.emit('webrtc_answer', answer);
+          socket.emit('webrtc_answer', answer);
         } catch (err) {
           console.error("Error handling offer", err);
         }
       });
 
-      socketRef.current.on('webrtc_answer', async (answer) => {
+      socket.on('webrtc_answer', async (answer) => {
         if (!peerConnectionRef.current) return;
         try {
           await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
@@ -205,7 +209,7 @@ export default function ChatRoom() {
         }
       });
 
-      socketRef.current.on('webrtc_ice_candidate', async (candidate) => {
+      socket.on('webrtc_ice_candidate', async (candidate) => {
         if (!peerConnectionRef.current) return;
         try {
           await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
@@ -214,38 +218,47 @@ export default function ChatRoom() {
         }
       });
 
-      socketRef.current.on('chat_message', (msg) => {
+      socket.on('chat_message', (msg) => {
         setMessages((prev) => [...prev, msg]);
         if (msg.sender !== 'me') {
           playSfx(receiveSound);
         }
       });
 
-      socketRef.current.on('kicked', ({ message }) => {
+      socket.on('kicked', ({ message }) => {
         playSfx(alertSound);
         alert(message || 'You have been kicked by an admin.');
         navigate('/');
       });
 
-      socketRef.current.on('banned', ({ message }) => {
+      socket.on('banned', ({ message }) => {
         playSfx(alertSound);
         alert(message || 'Your IP has been banned for violating community guidelines.');
         navigate('/');
       });
 
       // 🔥 FIXED: Attach listeners BEFORE starting media/queue to avoid missing events
-      if (socketRef.current.connected) {
+      if (socket.connected) {
          setupMedia();
       }
 
-      return () => {
-        cleanupPeerConnection();
-        if (localStreamRef.current) {
-           localStreamRef.current.getTracks().forEach(track => track.stop());
-           localStreamRef.current = null;
-        }
-        if (socketRef.current) socketRef.current.disconnect();
-      };
+    return () => {
+      cleanupPeerConnection();
+      if (localStreamRef.current) {
+         localStreamRef.current.getTracks().forEach(track => track.stop());
+         localStreamRef.current = null;
+      }
+      socket.off('connect', onConnect);
+      socket.off('match_found');
+      socket.off('stranger_disconnected');
+      socket.off('initiate_webrtc');
+      socket.off('webrtc_offer');
+      socket.off('webrtc_answer');
+      socket.off('webrtc_ice_candidate');
+      socket.off('chat_message');
+      socket.off('kicked');
+      socket.off('banned');
+    };
     }, [chatType, setupMedia]);
 
   // High-reliability auto-hide for mobile matching
@@ -287,7 +300,7 @@ export default function ChatRoom() {
 
     peerConnectionRef.current.onicecandidate = (event) => {
       if (event.candidate) {
-        socketRef.current.emit('webrtc_ice_candidate', event.candidate);
+        socket.emit('webrtc_ice_candidate', event.candidate);
       }
     };
 
@@ -319,11 +332,11 @@ export default function ChatRoom() {
     setStatus('Looking for a partner...');
     setMessages([]);
     cleanupPeerConnection();
-    socketRef.current.emit('next_stranger', { type: chatType });
+    socket.emit('next_stranger', { type: chatType });
   };
 
   const handleStop = () => {
-    socketRef.current.emit('stop_chat');
+    socket.emit('stop_chat');
     setIsConnected(false);
     setStatus('You have disconnected.');
   };
@@ -357,7 +370,7 @@ export default function ChatRoom() {
     if (inputMsg.trim() && isConnected) {
       const msgObj = { sender: 'me', text: inputMsg };
       setMessages((prev) => [...prev, msgObj]);
-      socketRef.current.emit('chat_message', inputMsg);
+      socket.emit('chat_message', inputMsg);
       playSfx(receiveSound); // The single "bop"
       setInputMsg('');
     }

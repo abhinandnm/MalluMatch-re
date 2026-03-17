@@ -11,18 +11,15 @@ import AdminPortal from './pages/AdminPortal';
 import AgeVerification from './components/AgeVerification';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
+import socket from './socket';
 
 const AppWrapper = () => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [announcement, setAnnouncement] = useState('');
-  const socketRef = useRef(null);
   const chimeSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3'));
 
   useEffect(() => {
-    socketRef.current = io('https://mallumatch-api.onrender.com');
-    
-    socketRef.current.on('global_announcement', ({ message }) => {
+    socket.on('global_announcement', ({ message }) => {
       setAnnouncement(message);
       // Play calm chime for broadcast
       chimeSound.current.currentTime = 0;
@@ -30,7 +27,7 @@ const AppWrapper = () => {
     });
 
     return () => {
-      if (socketRef.current) socketRef.current.disconnect();
+      socket.off('global_announcement');
     };
   }, []);
 
