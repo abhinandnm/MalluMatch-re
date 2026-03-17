@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import socket from '../socket';
-import { Send, Lock, BellRing, Shield } from 'lucide-react';
+import { Send, Lock, BellRing, Shield, AlertTriangle } from 'lucide-react';
 import './AdminPortal.css';
 
 export default function AdminPortal() {
@@ -208,7 +208,7 @@ export default function AdminPortal() {
                         </div>
                         <div className="report-info">
                            <div className="report-meta">
-                              <strong>Offender:</strong> {v.userId.substring(0, 8)}<br />
+                              <strong>Offender:</strong> {v.userId?.substring(0, 8) || 'Unknown'}<br />
                               <strong>IP:</strong> {v.userIP}<br />
                               <strong>Time:</strong> {v.timestamp}
                            </div>
@@ -237,7 +237,7 @@ export default function AdminPortal() {
                         </div>
                         <div className="report-info">
                            <div className="report-meta">
-                              <strong>Target:</strong> {r.offenderId.substring(0, 6)}...<br />
+                              <strong>Target:</strong> {r.offenderId?.substring(0, 6) || 'Unknown'}...<br />
                               <strong>IP:</strong> {r.offenderIP}<br />
                               <strong>Time:</strong> {r.timestamp}
                            </div>
@@ -257,7 +257,7 @@ export default function AdminPortal() {
                   {logs.map((l, i) => (
                      <div key={i} className="log-entry">
                         <span className="log-time">[{l.time}]</span>
-                        <span className="log-room">Room {l.roomId.substring(5, 11)}:</span>
+                        <span className="log-room">Room {l.roomId?.substring(5, 11) || '???'}:</span>
                         <span className="log-text">{l.text}</span>
                      </div>
                   ))}
