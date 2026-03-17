@@ -40,6 +40,7 @@ export default function ChatRoom() {
   const [auraActive, setAuraActive] = useState(false);
   const [showChat, setShowChat] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('none');
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
@@ -255,6 +256,12 @@ export default function ChatRoom() {
     }
   }, [isConnected, chatType]);
 
+  // Handle 8-second tutorial cleanup
+  useEffect(() => {
+    const timer = setTimeout(() => setShowTutorial(false), 8000);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     if (chatboxRef.current) {
       chatboxRef.current.scrollTop = chatboxRef.current.scrollHeight;
@@ -436,19 +443,23 @@ export default function ChatRoom() {
             {!isConnected && status.includes('disconnected') ? (
               <button className="meet-btn next-btn" onClick={() => { playSfx(tapSound); handleNext(); }} title="Match New Partner">
                 <UserSearch size={22} />
+                {showTutorial && <span className="tutorial-label">Match</span>}
               </button>
             ) : (
               <button className="meet-btn stop-btn" onClick={() => { playSfx(tapSound); handleStop(); }} disabled={!isConnected && !status.includes('Looking')} title="Stop Chat">
                 <UserX size={22} />
+                {showTutorial && <span className="tutorial-label">Stop</span>}
               </button>
             )}
 
             <button className={`meet-btn filter-btn ${showFilters ? 'active' : ''}`} onClick={() => setShowFilters(!showFilters)} title="Funny Filters">
                <Wand2 size={20} />
+               {showTutorial && <span className="tutorial-label">Filters</span>}
             </button>
 
             <button className="meet-btn report-btn" onClick={() => { playSfx(tapSound); reportUser(); }} title="Report User">
               <Shield size={20} />
+              {showTutorial && <span className="tutorial-label">Report</span>}
             </button>
 
             <button className={`meet-btn chat-toggle-btn ${showChat ? 'active' : ''}`} onClick={() => setShowChat(!showChat)} title="Toggle Chat">
