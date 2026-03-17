@@ -15,6 +15,7 @@ export default function AdminPortal() {
    const [userCountSettings, setUserCountSettings] = useState({ customCount: 100, mode: 'realtime' });
    const [tempCustomCount, setTempCustomCount] = useState(100);
    const logEndRef = useRef(null);
+   const alertSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
 
    useEffect(() => {
       socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings, safetyViolations }) => {
@@ -31,6 +32,7 @@ export default function AdminPortal() {
 
       socket.on('new_report', (report) => {
          setReports(prev => [report, ...prev]);
+         alertSound.current.play().catch(() => {});
       });
 
       socket.on('live_chat_log', (log) => {
@@ -48,6 +50,7 @@ export default function AdminPortal() {
 
       socket.on('new_safety_alert', (violation) => {
          setSafetyViolations(prev => [violation, ...prev]);
+         alertSound.current.play().catch(() => {});
       });
 
       socket.on('update_safety_violations', (updatedList) => {

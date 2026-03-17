@@ -18,7 +18,6 @@ const io = new Server(server, {
 const bannedIPs = new Set();
 const reports = [];
 const liveLogs = []; // Feed of all text messages
-const admins = new Set();
 const safetyViolations = [];
 const userStrikes = new Map(); // IP -> count
 
@@ -177,16 +176,14 @@ io.on('connection', (socket) => {
       socket.to(roomId).emit('chat_message', { sender: 'stranger', text: msg });
 
       // Send to all admins
-      admins.forEach(adminId => {
-        io.to(adminId).emit('live_chat_log', logEntry);
-      });
+      io.to('admins').emit('live_chat_log', logEntry);
     }
   });
 
   // Admin Actions
   socket.on('admin_auth', ({ password }) => {
     if (password === 'ccyr0149') {
-      admins.add(socket.id);
+      socket.join('admins');
       socket.emit('admin_auth_success', { 
         reports, 
         liveLogs, 
@@ -211,9 +208,7 @@ io.on('connection', (socket) => {
     safetyViolations.push(violation);
     if (safetyViolations.length > 50) safetyViolations.shift();
 
-    admins.forEach(adminId => {
-      io.to(adminId).emit('new_safety_alert', violation);
-    });
+    io.to('admins').emit('new_safety_alert', violation);
   });
 
   socket.on('admin_handle_safety_violation', ({ violationId, action, password }) => {
@@ -235,12 +230,10 @@ io.on('connection', (socket) => {
 
     safetyViolations.splice(index, 1);
     
-    admins.forEach(adminId => {
-      io.to(adminId).emit('update_safety_violations', safetyViolations);
-      if (action === 'ban') {
-        io.to(adminId).emit('update_banned_ips', Array.from(bannedIPs));
-      }
-    });
+    io.to('admins').emit('update_safety_violations', safetyViolations);
+    if (action === 'ban') {
+      io.to('admins').emit('update_banned_ips', Array.from(bannedIPs));
+    }
   });
 
   socket.on('admin_update_user_count', ({ settings, password }) => {
@@ -248,9 +241,7 @@ io.on('connection', (socket) => {
       userCountSettings = { ...userCountSettings, ...settings };
       broadcastUserCount();
       // Notify all admins of the update
-      admins.forEach(adminId => {
-        io.to(adminId).emit('update_user_count_settings', userCountSettings);
-      });
+      io.to('admins').emit('update_user_count_settings', userCountSettings);
     }
   });
 
@@ -261,12 +252,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('admin_unban', ({ ip }) => {
-    if (!admins.has(socket.id)) return;
+    if (!socket.rooms.has('admins')) return;
     bannedIPs.delete(ip);
     // Notify all admins of the update
-    admins.forEach(adminId => {
-      io.to(adminId).emit('update_banned_ips', Array.from(bannedIPs));
-    });
+    io.to('admins').emit('update_banned_ips', Array.from(bannedIPs));
   });
 
   socket.on('report_user', ({ screenshot, comment }) => {
@@ -292,13 +281,11 @@ io.on('connection', (socket) => {
     reports.push(report);
     if (reports.length > 50) reports.shift();
 
-    admins.forEach(adminId => {
-      io.to(adminId).emit('new_report', report);
-    });
+    io.to('admins').emit('new_report', report);
   });
 
   socket.on('admin_kick', ({ targetId }) => {
-    if (!admins.has(socket.id)) return;
+    if (!socket.rooms.has('admins')) return;
     const targetSocket = io.sockets.sockets.get(targetId);
     if (targetSocket) {
       targetSocket.emit('kicked', { message: 'You have been kicked by an admin.' });
@@ -323,16 +310,13 @@ io.on('connection', (socket) => {
        }
     }
     // Notify all admins of the update
-    admins.forEach(adminId => {
-      io.to(adminId).emit('update_banned_ips', Array.from(bannedIPs));
-    });
+    io.to('admins').emit('update_banned_ips', Array.from(bannedIPs));
   });
 
   socket.on('disconnect', () => {
     onlineUsers--;
     broadcastUserCount();
     matchMaker.handleDisconnect(socket);
-    admins.delete(socket.id);
   });
 });
 
