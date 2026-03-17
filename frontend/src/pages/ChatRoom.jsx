@@ -181,13 +181,11 @@ export default function ChatRoom() {
     }
   };
 
-  const reportedViolations = useRef(new Set()); // To prevent spamming reports for the same room
+  const hasReportedViolation = useRef(false);
 
   const handleViolation = (reason) => {
-    const roomId = matchMaker?.userRooms?.get(socket.id) || 'lobby';
-    if (reportedViolations.current.has(roomId)) return;
-    
-    reportedViolations.current.add(roomId);
+    if (hasReportedViolation.current) return;
+    hasReportedViolation.current = true;
 
     // Capture evidence
     const canvas = document.createElement('canvas');
