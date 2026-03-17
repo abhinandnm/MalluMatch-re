@@ -497,6 +497,7 @@ export default function ChatRoom() {
                 ></video>
              </div>
              <div className="video-feed self-video">
+                {safetyViolation && <div className="safety-overlay mini"><AlertTriangle size={24} /></div>}
                 <video 
                   ref={(el) => {
                     localVideoRef.current = el;
@@ -505,7 +506,7 @@ export default function ChatRoom() {
                   autoPlay 
                   playsInline 
                   muted
-                  className={`filter-${selectedFilter}`}
+                  className={`filter-${selectedFilter} ${safetyViolation ? 'blur-heavy' : ''}`}
                 ></video>
                 <div className="self-label">You</div>
              </div>
