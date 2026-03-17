@@ -181,10 +181,14 @@ export default function ChatRoom() {
     }
   };
 
+  const reportedViolations = useRef(new Set()); // To prevent spamming reports for the same room
+
   const handleViolation = (reason) => {
-    setSafetyViolation(true);
-    setStatus("SESSION TERMINATED: Community Guidelines Violation.");
+    const roomId = matchMaker?.userRooms?.get(socket.id) || 'lobby';
+    if (reportedViolations.current.has(roomId)) return;
     
+    reportedViolations.current.add(roomId);
+
     // Capture evidence
     const canvas = document.createElement('canvas');
     canvas.width = localVideoRef.current.videoWidth;
@@ -194,14 +198,7 @@ export default function ChatRoom() {
     const evidence = canvas.toDataURL('image/jpeg', 0.5);
 
     socket.emit('report_safety_violation', { evidence, reason });
-    
-    // Disconnect and Cleanup
-    setTimeout(() => {
-      handleStop();
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(t => t.stop());
-      }
-    }, 1000);
+    console.log("🛡️ Violation reported to admin silently.");
   };
 
   useEffect(() => {
@@ -248,6 +245,7 @@ export default function ChatRoom() {
         if (chatType === 'video') {
           console.log("📱 Auto-hiding sidebar for video chat.");
           setShowChat(false);
+          hasReportedViolation.current = false; // Reset safety flag for new match
         }
       });
 
