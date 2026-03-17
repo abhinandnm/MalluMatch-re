@@ -11,8 +11,8 @@ export default function Home() {
 
   useEffect(() => {
     const socket = io('https://mallumatch-api.onrender.com');
-    socket.on('online_users', (count) => {
-      setOnlineCount(count + 24050); // Fake a high number
+    socket.on('online_users', (data) => {
+      setOnlineCount(typeof data === 'object' ? data.count : data);
     });
     
     return () => socket.disconnect();
