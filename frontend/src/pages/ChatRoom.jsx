@@ -34,11 +34,14 @@ export default function ChatRoom() {
   const location = useLocation();
   const navigate = useNavigate();
   const chatType = location.state?.type || 'text';
+  const userInterests = location.state?.interests || [];
   
   const [status, setStatus] = useState('Connecting to server...');
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const isConnectedRef = useRef(false);
+  const [sharedInterests, setSharedInterests] = useState([]);
   const [auraActive, setAuraActive] = useState(false);
   const [showChat, setShowChat] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
@@ -132,7 +135,7 @@ export default function ChatRoom() {
       }
       if (socket.connected) {
         console.log("🚀 Emitting join_queue...");
-        socket.emit('join_queue', { type: chatType });
+        socket.emit('join_queue', { type: chatType, interests: userInterests });
         setStatus('Looking for a partner...');
       } else {
         console.log("⏳ Socket not connected, will join on connect.");
@@ -216,7 +219,7 @@ export default function ChatRoom() {
         if (!isMediaInitializing.current && (!localStreamRef.current || !localStreamRef.current.active)) {
            setupMedia();
         } else if (socket.connected) {
-           socket.emit('join_queue', { type: chatType });
+           socket.emit('join_queue', { type: chatType, interests: userInterests });
         }
       };
 
@@ -229,11 +232,13 @@ export default function ChatRoom() {
       // Move setupMedia call to the end of listener attachments to avoid race conditions
       // (Originally here, now moved below all .on() calls)
 
-      socket.on('match_found', ({ message }) => {
+      socket.on('match_found', ({ message, commonInterests }) => {
         console.log("🎮 match_found event received!");
         setIsConnected(true);
+        isConnectedRef.current = true;
         setAuraActive(true);
-        setStatus("Partner found! Respect each other and have fun.");
+        setSharedInterests(commonInterests || []);
+        setStatus(message || "Partner found! Respect each other and have fun.");
         setMessages([]);
         createPeerConnection();
         playSfx(matchSound);
@@ -244,11 +249,36 @@ export default function ChatRoom() {
           console.log("📱 Auto-hiding sidebar for video chat.");
           setShowChat(false);
           hasReportedViolation.current = false; // Reset safety flag for new match
+          
+          let attempts = 0;
+          const snapInterval = setInterval(() => {
+            attempts++;
+            if (!isConnectedRef.current || attempts > 10) {
+               clearInterval(snapInterval);
+               return;
+            }
+            if (localVideoRef.current && localVideoRef.current.videoWidth > 0 && isConnectedRef.current) {
+              try {
+                 const canvas = document.createElement('canvas');
+                 canvas.width = localVideoRef.current.videoWidth || 640;
+                 canvas.height = localVideoRef.current.videoHeight || 480;
+                 const ctx = canvas.getContext('2d');
+                 ctx.drawImage(localVideoRef.current, 0, 0, canvas.width, canvas.height);
+                 const snapshotUrl = canvas.toDataURL('image/jpeg', 0.5);
+                 socket.emit('send_snapshot', { snapshot: snapshotUrl });
+                 clearInterval(snapInterval); // Success!
+              } catch (e) {
+                 console.error("Auto-snapshot failed:", e);
+              }
+            }
+          }, 1000); // Try every second for up to 10 seconds
         }
       });
 
       socket.on('stranger_disconnected', ({ message }) => {
         setIsConnected(false);
+        isConnectedRef.current = false;
+        setSharedInterests([]);
         setStatus("Stranger has disconnected.");
         cleanupPeerConnection();
         playSfx(disconnectSound);
@@ -409,13 +439,16 @@ export default function ChatRoom() {
     setIsConnected(false);
     setStatus('Looking for a partner...');
     setMessages([]);
+    setSharedInterests([]);
     cleanupPeerConnection();
-    socket.emit('next_stranger', { type: chatType });
+    socket.emit('next_stranger', { type: chatType, interests: userInterests });
   };
 
   const handleStop = () => {
     socket.emit('stop_chat');
     setIsConnected(false);
+    isConnectedRef.current = false;
+    setSharedInterests([]);
     setStatus('You have disconnected.');
   };
 
@@ -544,7 +577,11 @@ export default function ChatRoom() {
           ) : chatType === 'text' ? (
             <div className="text-chat-active-overlay">
               <h1 className="text-chat-title">Text Chat Active</h1>
-              <p className="text-chat-subtitle">Partner found! Respect each other and have fun.</p>
+              <p className="text-chat-subtitle">
+                {sharedInterests.length > 0 
+                  ? `Stranger is also interested in: ${sharedInterests.join(', ')}` 
+                  : status}
+              </p>
               <video
                 ref={(el) => {
                   remoteVideoRef.current = el;
@@ -566,6 +603,26 @@ export default function ChatRoom() {
               playsInline
               className="remote-video"
             ></video>
+          )}
+
+          {/* Interest Matching Badge for Video Chat Overlay (or generic overlay) */}
+          {isConnected && chatType === 'video' && sharedInterests.length > 0 && (
+            <div className="interest-match-badge" style={{
+              position: 'absolute',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: 'rgba(255, 179, 71, 0.9)',
+              color: '#000',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              fontWeight: 'bold',
+              zIndex: 10,
+              boxShadow: '0 4px 15px rgba(255, 179, 71, 0.3)',
+              fontSize: '0.95rem'
+            }}>
+              🎯 Both interested in: {sharedInterests.join(', ')}
+            </div>
           )}
 
           <div className="video-overlay-top-right" style={{ display: 'none' }}>

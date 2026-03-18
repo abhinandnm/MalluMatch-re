@@ -8,6 +8,7 @@ import './Home.css';
 export default function Home() {
   const navigate = useNavigate();
   const [onlineCount, setOnlineCount] = useState(0);
+  const [interestsInput, setInterestsInput] = useState('');
 
   useEffect(() => {
     socket.on('online_users', (data) => {
@@ -20,7 +21,8 @@ export default function Home() {
   }, []);
 
   const handleStart = (type) => {
-    navigate('/chat', { state: { type } });
+    const interests = interestsInput.split(',').map(i => i.trim().toLowerCase()).filter(i => i);
+    navigate('/chat', { state: { type, interests } });
   };
 
   return (
@@ -53,8 +55,37 @@ export default function Home() {
           <h3>Choose your experience</h3>
           <p className="action-desc">No registration required. Just jump right in.</p>
           
+          <div className="interest-input-container" style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
+            <label htmlFor="interests" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#b3b3b3' }}>
+              Add your interests (optional)
+            </label>
+            <input 
+              type="text" 
+              id="interests"
+              placeholder="e.g. music, gaming, sports"
+              value={interestsInput}
+              onChange={(e) => setInterestsInput(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.8rem',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                backgroundColor: '#1a1a1a',
+                color: '#fff',
+                fontSize: '1rem',
+                outline: 'none',
+                transition: 'border-color 0.3s'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#4f4f4f'}
+              onBlur={(e) => e.target.style.borderColor = '#333'}
+            />
+            <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem', marginBottom: 0 }}>
+              Comma separated. Matches you with people who share an interest.
+            </p>
+          </div>
+          
           <div className="action-buttons">
-            <Link to="/chat" state={{ type: 'text' }} className="premium-btn text-mode" style={{ textDecoration: 'none' }}>
+            <Link to="/chat" state={{ type: 'text', interests: interestsInput.split(',').map(i => i.trim().toLowerCase()).filter(i => i) }} className="premium-btn text-mode" style={{ textDecoration: 'none' }}>
               <div className="btn-icon">
                 <MessageSquare size={24} />
               </div>
@@ -64,7 +95,7 @@ export default function Home() {
               </div>
             </Link>
             
-            <Link to="/chat" state={{ type: 'video' }} className="premium-btn video-mode" style={{ textDecoration: 'none' }}>
+            <Link to="/chat" state={{ type: 'video', interests: interestsInput.split(',').map(i => i.trim().toLowerCase()).filter(i => i) }} className="premium-btn video-mode" style={{ textDecoration: 'none' }}>
               <div className="btn-icon">
                 <Video size={24} />
               </div>

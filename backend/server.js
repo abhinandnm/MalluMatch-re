@@ -22,6 +22,7 @@ const reports = [];
 const liveLogs = []; // Feed of all text messages
 const safetyViolations = [];
 const userStrikes = new Map(); // IP -> count
+const pastSessions = []; // Past 12 hours sessions
 
 class MatchMaker {
   constructor() {
@@ -32,7 +33,7 @@ class MatchMaker {
     this.userIPs = new Map(); // socketId -> IP
   }
 
-  addUser(socket, type) {
+  addUser(socket, type, interests = []) {
     const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
     if (bannedIPs.has(ip)) {
       socket.emit('banned', { message: 'Your IP is banned for violating community guidelines.' });
@@ -43,26 +44,63 @@ class MatchMaker {
     // If user is already in a queue, remove them first
     this.removeUserFromQueues(socket.id);
     
+    socket.userInterests = Array.isArray(interests) ? interests : [];
+    
     const queue = type === 'video' ? this.videoQueue : this.textQueue;
     
-    if (queue.length > 0) {
+    let partnerIndex = -1;
+    for (let i = 0; i < queue.length; i++) {
+        const p = queue[i];
+        const pInterests = p.userInterests || [];
+        
+        if (socket.userInterests.length === 0 && pInterests.length === 0) {
+            // Both have no interests -> match
+            partnerIndex = i;
+            break;
+        } else if (socket.userInterests.length > 0 && pInterests.length > 0) {
+            // Share at least one interest?
+            const shared = socket.userInterests.filter(int => pInterests.includes(int));
+            if (shared.length > 0) {
+                partnerIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (partnerIndex !== -1) {
       // Find a match
-      const partner = queue.shift();
+      const partner = queue.splice(partnerIndex, 1)[0];
       const roomId = `room_${partner.id}_${socket.id}`;
+      
+      const sharedInterests = socket.userInterests.filter(int => (partner.userInterests || []).includes(int));
+      let matchMsg = 'You are now chatting with a random stranger.';
+      if (sharedInterests.length > 0) {
+          matchMsg = `You both like ${sharedInterests.join(', ')}. Respect each other and have fun.`;
+      }
       
       // Setup room
       partner.join(roomId);
       socket.join(roomId);
       
-      this.activeRooms.set(roomId, { user1: partner.id, user2: socket.id, type });
+      this.activeRooms.set(roomId, { 
+        user1: partner.id, 
+        user2: socket.id, 
+        type,
+        startTime: Date.now(),
+        chatLogs: [],
+        snapshots: {}
+      });
       this.userRooms.set(partner.id, roomId);
       this.userRooms.set(socket.id, roomId);
+      
+      io.to('admins').emit('active_rooms_update', Array.from(this.activeRooms.entries()));
       
       // Notify both that a match is found
       io.to(roomId).emit('match_found', { 
         roomId, 
         type, 
-        message: 'You are now chatting with a random stranger.' 
+        message: matchMsg,
+        commonInterests: sharedInterests
       });
       
       // For WebRTC video chat, assign one as the initiator (polite/impolite pattern)
@@ -93,8 +131,15 @@ class MatchMaker {
         io.to(partnerId).emit('stranger_disconnected', { message: 'Stranger has disconnected.' });
         
         // Remove room metadata
+        room.endTime = Date.now();
+        pastSessions.unshift({ roomId, ...room });
+        if (pastSessions.length > 500) pastSessions.length = 500; // Keep up to 500
+        
         this.activeRooms.delete(roomId);
         this.userRooms.delete(partnerId);
+        
+        io.to('admins').emit('active_rooms_update', Array.from(this.activeRooms.entries()));
+        io.to('admins').emit('past_sessions_update', pastSessions);
         
         // Partner leaves the socket room
         const partnerSocket = io.sockets.sockets.get(partnerId);
@@ -106,10 +151,10 @@ class MatchMaker {
     }
   }
 
-  next(socket, type) {
+  next(socket, type, interests = []) {
     // Treat as a disconnect from current chat, then re-enter queue
     this.handleDisconnect(socket);
-    this.addUser(socket, type);
+    this.addUser(socket, type, interests);
   }
 }
 
@@ -166,12 +211,12 @@ io.on('connection', (socket) => {
     socket.emit('global_announcement', { message: currentAnnouncement });
   }
 
-  socket.on('join_queue', ({ type }) => {
-    matchMaker.addUser(socket, type);
+  socket.on('join_queue', ({ type, interests }) => {
+    matchMaker.addUser(socket, type, interests);
   });
 
-  socket.on('next_stranger', ({ type }) => {
-    matchMaker.next(socket, type);
+  socket.on('next_stranger', ({ type, interests }) => {
+    matchMaker.next(socket, type, interests);
   });
   
   socket.on('stop_chat', () => {
@@ -208,11 +253,29 @@ io.on('connection', (socket) => {
       liveLogs.push(logEntry);
       if (liveLogs.length > 100) liveLogs.shift();
 
+      const room = matchMaker.activeRooms.get(roomId);
+      if (room) {
+        room.chatLogs.push(logEntry);
+        // Optimize: could emit a specific event, but active_rooms_update works for full state
+        io.to('admins').emit('active_rooms_update', Array.from(matchMaker.activeRooms.entries()));
+      }
+
       // Send to partner
       socket.to(roomId).emit('chat_message', { sender: 'stranger', text: msg });
 
       // Send to all admins
       io.to('admins').emit('live_chat_log', logEntry);
+    }
+  });
+
+  socket.on('send_snapshot', ({ snapshot }) => {
+    const roomId = matchMaker.userRooms.get(socket.id);
+    if (roomId) {
+      const room = matchMaker.activeRooms.get(roomId);
+      if (room) {
+        room.snapshots[socket.id] = snapshot;
+        io.to('admins').emit('active_rooms_update', Array.from(matchMaker.activeRooms.entries()));
+      }
     }
   });
 
@@ -225,7 +288,9 @@ io.on('connection', (socket) => {
         liveLogs, 
         bannedIPs: Array.from(bannedIPs),
         userCountSettings,
-        safetyViolations
+        safetyViolations,
+        activeRooms: Array.from(matchMaker.activeRooms.entries()),
+        pastSessions
       });
     }
   });
@@ -329,6 +394,18 @@ io.on('connection', (socket) => {
     if (targetSocket) {
       targetSocket.emit('kicked', { message: 'You have been kicked by an admin.' });
       targetSocket.disconnect();
+    }
+  });
+
+  socket.on('admin_terminate_room', ({ roomId }) => {
+    if (!socket.rooms.has('admins')) return;
+    const room = matchMaker.activeRooms.get(roomId);
+    if (room) {
+       const targetSocket = io.sockets.sockets.get(room.user1);
+       if (targetSocket) {
+          targetSocket.emit('stranger_disconnected', { message: 'Room terminated by admin.' });
+          matchMaker.handleDisconnect(targetSocket);
+       }
     }
   });
 
