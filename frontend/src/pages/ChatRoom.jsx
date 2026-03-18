@@ -43,7 +43,7 @@ export default function ChatRoom() {
   const isConnectedRef = useRef(false);
   const [sharedInterests, setSharedInterests] = useState([]);
   const [auraActive, setAuraActive] = useState(false);
-  const [showChat, setShowChat] = useState(window.innerWidth >= 768);
+  const [showChat, setShowChat] = useState(window.innerWidth >= 768 || chatType === 'text');
   const [showFilters, setShowFilters] = useState(false);
   const [showTutorial, setShowTutorial] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('none');
@@ -329,6 +329,8 @@ export default function ChatRoom() {
         setMessages((prev) => [...prev, msg]);
         if (msg.sender !== 'me') {
           playSfx(receiveSound);
+          // Automatically open chat panel when stranger sends a message
+          setShowChat(true);
         }
       });
 
