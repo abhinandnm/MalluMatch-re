@@ -544,13 +544,13 @@ export default function ChatRoom() {
     if (localVideoRef.current && localStream && localVideoRef.current.srcObject !== localStream) {
       localVideoRef.current.srcObject = localStream;
     }
-  }); // Run on every render to ensure it catches the ref if it remounts
+  }, [localStream]); // Only re-assign if the stream itself changes
 
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream && remoteVideoRef.current.srcObject !== remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
     }
-  }); // Run on every render to ensure it catches the ref if it remounts
+  }, [remoteStream]); // Only re-assign if the stream itself changes
 
   return (
     <div className={`desktop-ui-container ${chatType === 'video' ? 'video-mode' : 'text-mode'}`}>
