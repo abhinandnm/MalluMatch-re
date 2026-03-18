@@ -589,7 +589,7 @@ export default function ChatRoom() {
               <video
                 ref={(el) => {
                   remoteVideoRef.current = el;
-                  if (el && remoteStream && el.srcObject !== remoteStream) el.srcObject = remoteStream;
+                  if (el && remoteStream && (!el.srcObject || el.srcObject.id !== remoteStream.id)) el.srcObject = remoteStream;
                 }}
                 autoPlay
                 playsInline
@@ -601,7 +601,7 @@ export default function ChatRoom() {
             <video
               ref={(el) => {
                 remoteVideoRef.current = el;
-                if (el && remoteStream && el.srcObject !== remoteStream) el.srcObject = remoteStream;
+                if (el && remoteStream && (!el.srcObject || el.srcObject.id !== remoteStream.id)) el.srcObject = remoteStream;
               }}
               autoPlay
               playsInline
@@ -646,7 +646,7 @@ export default function ChatRoom() {
               <video
                 ref={(el) => {
                   localVideoRef.current = el;
-                  if (el && localStream && el.srcObject !== localStream) el.srcObject = localStream;
+                  if (el && localStream && (!el.srcObject || el.srcObject.id !== localStream.id)) el.srcObject = localStream;
                 }}
                 autoPlay
                 playsInline
