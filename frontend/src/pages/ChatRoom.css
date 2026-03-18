@@ -595,10 +595,10 @@
 }
 
 /* ============================================================
-   MOBILE LAYOUT — Samsung A14 5G and similar phones (≤ 767px)
+   MOBILE LAYOUT — Phones and Small Tablets (≤ 991px)
    Desktop styles above are NOT touched.
    ============================================================ */
-@media (max-width: 767px) {
+@media (max-width: 991px) {
 
   /* --- Root container: full viewport, column stack --- */
   .desktop-ui-container {
@@ -648,15 +648,17 @@
 
   /* --- User cam PiP: smaller, top-right corner --- */
   .user-cam-overlay {
-    width: 110px;
+    width: 100px;
     bottom: auto;
-    right: 12px;
-    top: 12px;
+    right: 16px;
+    top: 16px;
+    z-index: 100;
   }
 
   .user-video-wrapper {
+    aspect-ratio: 3/4; /* Better for mobile vertical capture */
     border-radius: 12px;
-    border-width: 1.5px;
+    border-width: 1px;
   }
 
   /* --- Bottom Navbar: fixed dock at bottom --- */
@@ -873,7 +875,7 @@
     display: none !important;
   }
 
-  /* Override remot-video zoom */
+  /* Override remote-video zoom */
   .remote-video {
     object-fit: contain !important; /* Fix zoomed-in camera */
     background: #000;

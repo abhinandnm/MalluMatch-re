@@ -369,10 +369,10 @@ export default function ChatRoom() {
     };
     }, [chatType, setupMedia]);
 
-  // High-reliability auto-hide for mobile matching
+  // Reliable auto-hide for matching
   useEffect(() => {
-    if (isConnected && chatType === 'video' && window.innerWidth < 768) {
-      console.log("📱 High-reliability auto-hide triggered.");
+    if (isConnected && chatType === 'video') {
+      console.log("📱 Auto-hide triggered (chat-active).");
       setShowChat(false);
       document.body.classList.add('chat-active');
     } else {
