@@ -1,29 +1,40 @@
-# MalluMatch Rollback & Version Control Guide 🛠️
+# MalluMatch Rollback & Backup Guide
 
-If any future updates break the site, you can revert to this stable version using the following methods:
+This guide ensures you can always return to a stable state if something goes wrong.
 
-## 1. Using Git (The Safest Way)
-I have just created a **Git Tag** called `stable-v1`. This marks the current "Perfect" state of your code.
+## 🛡️ Option 1: The Modern Way (Git Snapshots)
+Git is the fastest and most efficient way to "checkpoint" your work.
 
-**To rollback via command line:**
+### 1. Create a Snapshot
+Before you start a big change, run these commands:
 ```powershell
-git checkout stable-v1
-git push origin stable-v1 --force
+git add .
+git commit -m "Snapshot: Before trying [feature name]"
 ```
 
-## 2. Vercel Rollback (Frontend)
-1. Go to your [Vercel Dashboard](https://vercel.com/abhinandnms-projects/mallu-match).
-2. Click on the **Deployments** tab.
-3. Find the deployment from today (March 16).
-4. Click the three dots `...` and select **"Rollback"**.
-5. This will instantly make this version live again without any code changes.
+### 2. Roll Back
+If things break, you can "undo" back to that snapshot:
+```powershell
+git reset --hard HEAD
+```
+*⚠️ WARNING: This will delete any unsaved changes since your last snapshot.*
 
-## 3. Render Rollback (Backend)
-1. Go to your [Render Dashboard](https://dashboard.render.com).
-2. Select your `mallumatch-api` service.
-3. Go to the **Events** or **Deployments** tab.
-4. Click on the commit hash `74094f9` (the one labeled "privacy, terms, contact").
-5. Click **"Deploy this revision"**.
+---
 
-## 🚀 Future Safeguard
-Always keep the `master` or `main` branch synced. If things break, simply tell me: *"Rollback to the version from March 16th"* and I will execute the git commands for you!
+## 📂 Option 2: The Manual Way (Physical Backup)
+If you want a separate copy of your files, I've created a `backups/` folder.
+
+### 1. Create a Manual Backup
+I have created a snapshot for you in:
+`backups/snapshot_YYYYMMDD_HHMM` (Check the folder for the exact timestamp).
+
+### 2. How to Roll Back manually
+1.  Close your editor/server.
+2.  Rename your current `MalluMatch` folder to `MalluMatch_BROKEN`.
+3.  Copy the files from inside `backups/snapshot_...` back into a new `MalluMatch` folder.
+4.  Run `npm install` in both `frontend` and `backend` (since `node_modules` are not backed up to save space).
+
+---
+
+## 🚀 Pro Tip
+Always keep your `.env` files safe! They contain your passwords and keys, and aren't usually included in Git snapshots for security.

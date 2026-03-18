@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import socket from '../socket';
 import { Video, MessageSquare, Shield, Users, Zap } from 'lucide-react';
@@ -43,9 +43,9 @@ export default function Home() {
              <span className="pulse-dot"></span>
              <strong>{onlineCount.toLocaleString()}</strong> users online right now
           </div>
-          <h1>Connect With The World, <span className="text-gradient">Instantly.</span></h1>
+          <h1>The Best <span className="text-gradient">Random Chat App</span> Online</h1>
           <p className="subtitle">
-            Experience the thrill of spontaneous conversation. Meet new friends globally through high-quality random video or text chat.
+            Welcome to Mallu Match. Chat with strangers online through high-quality random video and text. Secure, free, and anonymous.
           </p>
         </div>
 
@@ -54,7 +54,7 @@ export default function Home() {
           <p className="action-desc">No registration required. Just jump right in.</p>
           
           <div className="action-buttons">
-            <button className="premium-btn text-mode" onClick={() => handleStart('text')}>
+            <Link to="/chat" state={{ type: 'text' }} className="premium-btn text-mode" style={{ textDecoration: 'none' }}>
               <div className="btn-icon">
                 <MessageSquare size={24} />
               </div>
@@ -62,9 +62,9 @@ export default function Home() {
                 <span className="btn-title">Text Chat</span>
                 <span className="btn-sub">Lightning fast messaging</span>
               </div>
-            </button>
+            </Link>
             
-            <button className="premium-btn video-mode" onClick={() => handleStart('video')}>
+            <Link to="/chat" state={{ type: 'video' }} className="premium-btn video-mode" style={{ textDecoration: 'none' }}>
               <div className="btn-icon">
                 <Video size={24} />
               </div>
@@ -72,7 +72,7 @@ export default function Home() {
                 <span className="btn-title">Video Chat</span>
                 <span className="btn-sub">Face-to-face connection</span>
               </div>
-            </button>
+            </Link>
           </div>
           
           <div className="compliance-text">
@@ -80,6 +80,17 @@ export default function Home() {
             <br />You must be <strong>18+</strong> to use this service.
           </div>
         </div>
+      </div>
+
+      <div className="seo-content-section" style={{ textAlign: 'center', padding: '3rem 1rem', color: '#b3b3b3', maxWidth: '800px', margin: '0 auto' }}>
+        <h2 style={{ color: '#fff', fontSize: '2rem', marginBottom: '1rem' }}>Anonymous Chat with Strangers Online</h2>
+        <p style={{ marginBottom: '1rem', lineHeight: '1.6', fontSize: '1.1rem' }}>
+          Discover the thrill of meeting new people on our leading <strong>free random chat</strong> platform. Whether you are looking for a quick <strong>anonymous chat</strong> or hoping to make long-lasting global connections, Mallu Match provides the perfect, safe environment. As a popular <strong>Mallu chat app</strong>, we connect Malayalis and users from all around the world instantly!
+        </p>
+        <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.1rem' }}>
+          Enjoy crystal-clear <strong>random video chat</strong> or lightning-fast text messaging. No registration is required, meaning your identity is protected. Jump into a room and start exploring diverse cultures today.
+        </p>
+        <h3 style={{ fontSize: '1.4rem', color: '#ffb347', marginTop: '1.5rem' }}>Start chatting now on Mallu Match – free and anonymous!</h3>
       </div>
 
       <div className="features-section">

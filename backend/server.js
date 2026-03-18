@@ -3,6 +3,8 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -114,9 +116,38 @@ class MatchMaker {
 const matchMaker = new MatchMaker();
 
 let onlineUsers = 0;
+
 let userCountSettings = {
   customCount: 100,
   mode: 'realtime' // 'realtime' or 'custom'
+};
+let currentAnnouncement = '';
+
+// Load settings from file if exists
+const settingsPath = path.join(__dirname, 'settings.json');
+try {
+  if (fs.existsSync(settingsPath)) {
+    const data = fs.readFileSync(settingsPath, 'utf8');
+    const parsed = JSON.parse(data);
+    if (parsed.userCountSettings) {
+      userCountSettings = { ...userCountSettings, ...parsed.userCountSettings };
+    }
+    if (parsed.currentAnnouncement !== undefined) {
+      currentAnnouncement = parsed.currentAnnouncement;
+    }
+  }
+} catch (err) {
+  console.error('Error loading settings.json:', err);
+}
+
+const saveSettings = () => {
+  const data = {
+    userCountSettings,
+    currentAnnouncement
+  };
+  fs.writeFile(settingsPath, JSON.stringify(data, null, 2), (err) => {
+    if (err) console.error('Error saving settings.json:', err);
+  });
 };
 
 const broadcastUserCount = () => {
@@ -129,6 +160,11 @@ const broadcastUserCount = () => {
 io.on('connection', (socket) => {
   onlineUsers++;
   broadcastUserCount();
+  
+  // Send the current global announcement to newly connected users if it exists
+  if (currentAnnouncement) {
+    socket.emit('global_announcement', { message: currentAnnouncement });
+  }
 
   socket.on('join_queue', ({ type }) => {
     matchMaker.addUser(socket, type);
@@ -239,6 +275,7 @@ io.on('connection', (socket) => {
   socket.on('admin_update_user_count', ({ settings, password }) => {
     if (password === 'ccyr0149') {
       userCountSettings = { ...userCountSettings, ...settings };
+      saveSettings();
       broadcastUserCount();
       // Notify all admins of the update
       io.to('admins').emit('update_user_count_settings', userCountSettings);
@@ -247,6 +284,8 @@ io.on('connection', (socket) => {
 
   socket.on('admin_broadcast', ({ message, password }) => {
     if (password === 'ccyr0149') {
+      currentAnnouncement = message;
+      saveSettings();
       io.emit('global_announcement', { message });
     }
   });

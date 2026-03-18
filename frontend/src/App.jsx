@@ -11,8 +11,14 @@ import Contact from './pages/Contact';
 import AdminPortal from './pages/AdminPortal';
 import AgeVerification from './components/AgeVerification';
 import AnnouncementBanner from './components/AnnouncementBanner';
+import Article1 from './pages/blog/Article1';
+import Article2 from './pages/blog/Article2';
+import Article3 from './pages/blog/Article3';
+import Article4 from './pages/blog/Article4';
+import Article5 from './pages/blog/Article5';
 import { useState, useEffect, useRef } from 'react';
 import socket from './socket';
+import SEOUpdater from './components/SEOUpdater';
 
 const AppWrapper = () => {
   const [ageVerified, setAgeVerified] = useState(false);
@@ -34,6 +40,7 @@ const AppWrapper = () => {
 
   return (
     <Router>
+      <SEOUpdater />
       {announcement && (
         <AnnouncementBanner 
           message={announcement} 
@@ -69,6 +76,11 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
           <Route path="/terms" element={<Terms />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin-portal" element={<AdminPortal />} />
+          <Route path="/blog/free-random-chat-apps-2026" element={<Article1 />} />
+          <Route path="/blog/how-to-stay-anonymous-on-random-chat-apps" element={<Article2 />} />
+          <Route path="/blog/chat-with-mallus-online-tips-tricks" element={<Article3 />} />
+          <Route path="/blog/random-video-chat-safely-in-2026" element={<Article4 />} />
+          <Route path="/blog/best-random-chat-apps-global-connections" element={<Article5 />} />
         </Routes>
       </main>
       {!isChatPage && <Footer />}

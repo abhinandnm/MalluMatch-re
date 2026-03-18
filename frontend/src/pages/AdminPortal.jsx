@@ -84,6 +84,11 @@ export default function AdminPortal() {
       setMessage('');
    };
 
+   const handleClearBroadcast = () => {
+      socket.emit('admin_broadcast', { message: '', password });
+      setStatus('Announcement cleared!');
+   };
+
    const handleKick = (targetId) => {
       socket.emit('admin_kick', { targetId });
    };
@@ -145,7 +150,10 @@ export default function AdminPortal() {
                      rows="3"
                   ></textarea>
                </div>
-               <button type="submit" className="blast-btn">Blast</button>
+               <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="submit" className="blast-btn" style={{ flex: 1 }}>Blast</button>
+                  <button type="button" className="blast-btn" style={{ background: '#ef4444', flex: 1 }} onClick={handleClearBroadcast}>Clear</button>
+               </div>
                {status && <p className="status-mini">{status}</p>}
             </form>
 
