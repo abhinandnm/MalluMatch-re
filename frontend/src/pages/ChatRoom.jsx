@@ -374,7 +374,11 @@ export default function ChatRoom() {
     if (isConnected && chatType === 'video' && window.innerWidth < 768) {
       console.log("📱 High-reliability auto-hide triggered.");
       setShowChat(false);
+      document.body.classList.add('chat-active');
+    } else {
+      document.body.classList.remove('chat-active');
     }
+    return () => document.body.classList.remove('chat-active');
   }, [isConnected, chatType]);
 
   // Handle 8-second tutorial cleanup
