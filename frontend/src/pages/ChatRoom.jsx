@@ -43,7 +43,7 @@ export default function ChatRoom() {
   const isConnectedRef = useRef(false);
   const [sharedInterests, setSharedInterests] = useState([]);
   const [auraActive, setAuraActive] = useState(false);
-  const [showChat, setShowChat] = useState(true);
+  const [showChat, setShowChat] = useState(window.innerWidth >= 768);
   const [showFilters, setShowFilters] = useState(false);
   const [showTutorial, setShowTutorial] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('none');
