@@ -6,8 +6,7 @@ export default function Navbar() {
   return (
     <header>
       <Link to="/" className="logo">
-        <img src="/logo.png" alt="MalluMatch Hook Logo" className="navbar-logo-img" />
-        Mallu<span>Match</span>
+        <img src="/logo.png" alt="MalluMatch Logo" className="navbar-logo-img" />
       </Link>
       <div className="tagline">Talk to strangers!</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
