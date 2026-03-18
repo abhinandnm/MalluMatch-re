@@ -540,202 +540,21 @@ export default function ChatRoom() {
                   <span>stranger</span>
                 </div>
               </div>
-
             </div>
-          ) : (
-            <video
-              ref={(el) => {
-                remoteVideoRef.current = el;
-                if (el && remoteStream) el.srcObject = remoteStream;
-              }}
-              autoPlay
-              playsInline
-              className="remote-video"
-            ></video>
-          )}
-
-          <div className="video-overlay-top-right" style={{ display: 'none' }}>
-            <button className="mute-btn" title="Toggle Audio">
-              <div className="mic-icon-cross">/</div>
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-            </button>
-          </div>
-
-          <div className="video-overlay-bottom-left">
-
-          </div>
-
-          {/* User Cam Overlay */}
-          <div className="user-cam-overlay">
-            <div className="user-video-wrapper">
+          ) : chatType === 'text' ? (
+            <div className="text-chat-active-overlay">
+              <h1 className="text-chat-title">Text Chat Active</h1>
+              <p className="text-chat-subtitle">Partner found! Respect each other and have fun.</p>
               <video
                 ref={(el) => {
-                  localVideoRef.current = el;
-                  if (el && localStream) el.srcObject = localStream;
+                  remoteVideoRef.current = el;
+                  if (el && remoteStream) el.srcObject = remoteStream;
                 }}
                 autoPlay
                 playsInline
-                muted
-                className={`local-video filter-${selectedFilter} ${safetyViolation ? 'blur-heavy' : ''}`}
+                className="remote-video hidden"
+                style={{ display: 'none' }}
               ></video>
-              <div className="overlay-mic-status" style={{ display: 'none' }}>
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="#ff4444" strokeWidth="2" fill="none"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-              </div>
-            </div>
-        // After 5s of failure, alert about firewall/NAT if still disconnected
-        setTimeout(() => {
-          if (peerConnectionRef.current?.iceConnectionState === 'failed') {
-            setStatus("Connection blocked by network firewall. Try switching to Data/WiFi.");
-          }
-        }, 5000);
-      }
-    };
-  };
-
-  const cleanupPeerConnection = () => {
-    if (peerConnectionRef.current) {
-      peerConnectionRef.current.close();
-      peerConnectionRef.current = null;
-    }
-    setRemoteStream(null);
-  };
-
-  const handleNext = () => {
-    setIsConnected(false);
-    setStatus('Looking for a partner...');
-    setMessages([]);
-    cleanupPeerConnection();
-    socket.emit('next_stranger', { type: chatType });
-  };
-
-  const handleStop = () => {
-    socket.emit('stop_chat');
-    setIsConnected(false);
-    setStatus('You have disconnected.');
-  };
-
-  const handleHome = () => {
-    handleStop();
-    navigate('/');
-  };
-
-  const reportUser = () => {
-    let screenshot = null;
-
-    const comment = window.prompt("Why are you reporting this user? (Optional)");
-    if (comment === null) return; // Cancelled
-
-    if (remoteVideoRef.current && remoteVideoRef.current.videoWidth > 0) {
-      // Capture a snapshot of the remote video if available
-      const canvas = document.createElement('canvas');
-      canvas.width = remoteVideoRef.current.videoWidth || 640;
-      canvas.height = remoteVideoRef.current.videoHeight || 480;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(remoteVideoRef.current, 0, 0, canvas.width, canvas.height);
-      screenshot = canvas.toDataURL('image/webp', 0.5); // Compressed screenshot
-    }
-    
-    socket.emit('report_user', { screenshot, comment: comment || "No reason provided" });
-    playSfx(reportSound);
-    setStatus('User reported. Moderation team notified.');
-    setTimeout(() => setStatus(isConnected ? 'Chatting with stranger...' : 'Searching...'), 3000);
-  };
-
-  const sendMessage = (e) => {
-    e.preventDefault();
-    if (inputMsg.trim() && isConnected) {
-      const msgObj = { sender: 'me', text: inputMsg };
-      setMessages((prev) => [...prev, msgObj]);
-      socket.emit('chat_message', inputMsg);
-      playSfx(receiveSound); // The single "bop"
-      setInputMsg('');
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage(e);
-    }
-    if (e.key === 'Escape') {
-       if (isConnected) {
-         handleStop();
-       } else {
-         handleNext();
-       }
-    }
-  };
-
-  const [sessionTime, setSessionTime] = useState(0);
-  const [currentTime, setCurrentTime] = useState('');
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    let interval;
-    if (isConnected) {
-      interval = setInterval(() => {
-        setSessionTime(prev => prev + 1);
-      }, 1000);
-    } else {
-      setSessionTime(0);
-    }
-    return () => clearInterval(interval);
-  }, [isConnected]);
-
-  const formatSessionTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  return (
-    <div className={`desktop-ui-container ${chatType === 'video' ? 'video-mode' : 'text-mode'}`}>
-      <ConnectionAura active={auraActive} />
-
-      {/* Left Sidebar */}
-      <div className="left-sidebar">
-        <div className="sidebar-panel warning-panel">
-          <div className="warning-content">
-            <div className="warning-icon">
-              <AlertTriangle size={24} color="#facc15" />
-              <span>WARNING</span>
-            </div>
-            <p>Any abuse or inappropriate behavior will be recorded and may be shared with our official platforms and authorities.</p>
-            <p className="strict">Strict action will be taken.</p>
-            <p>You are not anonymous.</p>
-            <p className="behave">Behave.</p>
-          </div>
-        </div>
-
-        <div className="sidebar-panel session-panel">
-          <div className="session-info">
-            <p className="session-label">Session Duration</p>
-            <p className="session-value">{formatSessionTime(sessionTime)}</p>
-            <div className="moderation-messages">
-
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Stage */}
-      <div className="main-stage">
-        <div className="video-container-primary">
-          {!isConnected ? (
-            <div className="stranger-placeholder">
-              <div className="glow-circle-outer">
-                <div className="glow-circle-inner">
-                  <span>stranger</span>
-                </div>
-              </div>
-
             </div>
           ) : (
             <video
