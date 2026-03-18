@@ -6,6 +6,7 @@ export default function Navbar() {
   return (
     <header>
       <Link to="/" className="logo">
+        <img src="/logo.png" alt="MalluMatch Hook Logo" className="navbar-logo-img" />
         Mallu<span>Match</span>
       </Link>
       <div className="tagline">Talk to strangers!</div>
