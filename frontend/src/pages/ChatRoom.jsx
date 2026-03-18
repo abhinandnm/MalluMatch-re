@@ -537,6 +537,19 @@ export default function ChatRoom() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Use effects for robust WebRTC stream assignment
+  useEffect(() => {
+    if (localVideoRef.current && localStream && localVideoRef.current.srcObject !== localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }); // Run on every render to ensure it catches the ref if it remounts
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream && remoteVideoRef.current.srcObject !== remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }); // Run on every render to ensure it catches the ref if it remounts
+
   return (
     <div className={`desktop-ui-container ${chatType === 'video' ? 'video-mode' : 'text-mode'}`}>
       <ConnectionAura active={auraActive} />
@@ -587,10 +600,7 @@ export default function ChatRoom() {
                   : status}
               </p>
               <video
-                ref={(el) => {
-                  remoteVideoRef.current = el;
-                  if (el && remoteStream && (!el.srcObject || el.srcObject.id !== remoteStream.id)) el.srcObject = remoteStream;
-                }}
+                ref={remoteVideoRef}
                 autoPlay
                 playsInline
                 className="remote-video hidden"
@@ -599,10 +609,7 @@ export default function ChatRoom() {
             </div>
           ) : (
             <video
-              ref={(el) => {
-                remoteVideoRef.current = el;
-                if (el && remoteStream && (!el.srcObject || el.srcObject.id !== remoteStream.id)) el.srcObject = remoteStream;
-              }}
+              ref={remoteVideoRef}
               autoPlay
               playsInline
               className="remote-video"
@@ -644,10 +651,7 @@ export default function ChatRoom() {
           <div className="user-cam-overlay">
             <div className="user-video-wrapper">
               <video
-                ref={(el) => {
-                  localVideoRef.current = el;
-                  if (el && localStream && (!el.srcObject || el.srcObject.id !== localStream.id)) el.srcObject = localStream;
-                }}
+                ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
