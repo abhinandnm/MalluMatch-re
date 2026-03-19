@@ -191,23 +191,25 @@ header {
 }
 
 .logo {
-  font-size: 1.75rem;
+  font-size: 1.85rem;
   font-family: var(--font-heading);
   font-weight: 800;
   color: var(--color-text);
   text-decoration: none;
   display: flex;
   align-items: center;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   gap: 12px;
+  text-transform: uppercase;
+  transition: transform 0.2s ease;
 }
 
-.navbar-logo-img {
-  height: 50px;
-  width: auto;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+.logo:hover {
+  transform: scale(1.02);
+  text-decoration: none;
 }
+
+/* Removed .navbar-logo-img styles as it is replaced by text */
 
 .logo span {
   color: var(--color-primary);
