@@ -42,6 +42,7 @@ export default function ChatRoom() {
   const [isConnected, setIsConnected] = useState(false);
   const isConnectedRef = useRef(false);
   const [sharedInterests, setSharedInterests] = useState([]);
+  const [strangerInterests, setStrangerInterests] = useState([]);
   const [auraActive, setAuraActive] = useState(false);
   const [showChat, setShowChat] = useState(window.innerWidth >= 768 || chatType === 'text');
   const [showFilters, setShowFilters] = useState(false);
@@ -232,13 +233,22 @@ export default function ChatRoom() {
       // Move setupMedia call to the end of listener attachments to avoid race conditions
       // (Originally here, now moved below all .on() calls)
 
-      socket.on('match_found', ({ message, commonInterests }) => {
+      socket.on('match_found', ({ message, commonInterests, strangerInterests }) => {
         console.log("🎮 match_found event received!");
         setIsConnected(true);
         isConnectedRef.current = true;
         setAuraActive(true);
         setSharedInterests(commonInterests || []);
-        setStatus(message || "Partner found! Respect each other and have fun.");
+        setStrangerInterests(strangerInterests || []);
+        
+        let displayStatus = message;
+        if (commonInterests && commonInterests.length > 0) {
+          displayStatus = `You both like: ${commonInterests.join(', ')}.`;
+        } else if (strangerInterests && strangerInterests.length > 0) {
+          displayStatus = `Stranger is interested in: ${strangerInterests.join(', ')}.`;
+        }
+        
+        setStatus(displayStatus || "Partner found! Respect each other and have fun.");
         setMessages([]);
         createPeerConnection();
         playSfx(matchSound);
@@ -279,6 +289,7 @@ export default function ChatRoom() {
         setIsConnected(false);
         isConnectedRef.current = false;
         setSharedInterests([]);
+        setStrangerInterests([]);
         setStatus("Stranger has disconnected.");
         cleanupPeerConnection();
         playSfx(disconnectSound);
@@ -446,6 +457,7 @@ export default function ChatRoom() {
     setStatus('Looking for a partner...');
     setMessages([]);
     setSharedInterests([]);
+    setStrangerInterests([]);
     cleanupPeerConnection();
     socket.emit('next_stranger', { type: chatType, interests: userInterests });
   };
@@ -598,8 +610,10 @@ export default function ChatRoom() {
               <h1 className="text-chat-title">Text Chat Active</h1>
               <p className="text-chat-subtitle">
                 {sharedInterests.length > 0 
-                  ? `Stranger is also interested in: ${sharedInterests.join(', ')}` 
-                  : status}
+                  ? `You both like: ${sharedInterests.join(', ')}` 
+                  : strangerInterests.length > 0 
+                    ? `Stranger is interested in: ${strangerInterests.join(', ')}`
+                    : status}
               </p>
               <video
                 ref={remoteVideoRef}
@@ -634,7 +648,9 @@ export default function ChatRoom() {
               boxShadow: '0 4px 15px rgba(255, 179, 71, 0.3)',
               fontSize: '0.95rem'
             }}>
-              🎯 Both interested in: {sharedInterests.join(', ')}
+              🎯 {sharedInterests.length > 0 
+                ? `Both interested in: ${sharedInterests.join(', ')}`
+                : `Stranger likes: ${strangerInterests.join(', ')}`}
             </div>
           )}
 
