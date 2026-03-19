@@ -636,17 +636,12 @@ export default function ChatRoom() {
           {!isConnected ? (
             <div className="stranger-placeholder">
               <div className="glow-circle-outer">
-                <div className="ripple"></div>
-                <div className="ripple"></div>
-                <div className="ripple"></div>
                 <div className="glow-circle-inner">
-                  <span key={searchingText} className="searching-text-animation">
+                  <span style={{ fontSize: '0.9rem', textAlign: 'center', padding: '0 10px', lineHeight: '1.2' }}>
                     {searchingText}
                   </span>
                 </div>
-                <div className="orbit-ring"></div>
               </div>
-              <div className="searching-subtext">Matchmaking in progress...</div>
             </div>
           ) : chatType === 'text' ? (
             <div className="text-chat-active-overlay">
