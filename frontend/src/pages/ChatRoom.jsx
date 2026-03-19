@@ -20,6 +20,11 @@ const iceServers = {
       urls: "turn:54.87.60.6:3478",
       username: "testuser",
       credential: "testpassword"
+    },
+    {
+      urls: "turn:54.87.60.6:3478?transport=tcp",
+      username: "testuser",
+      credential: "testpassword"
     }
   ],
   iceCandidatePoolSize: 10,
