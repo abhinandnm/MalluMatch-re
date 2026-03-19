@@ -36,8 +36,8 @@ export default function ChatRoom() {
   const chatType = location.state?.type || 'text';
   const userInterests = location.state?.interests || [];
   
-  const [status, setStatus] = useState('Checking connectivity...');
-  const [searchingText, setSearchingText] = useState('connecting to stranger...');
+  const [status, setStatus] = useState('Finding a match...');
+  const [searchingText, setSearchingText] = useState('searching for a partner...');
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -389,30 +389,13 @@ export default function ChatRoom() {
     };
     }, [chatType, userInterests, setupMedia]);
 
-  // Handle rotating funny messages while searching
+  // Handle searching text
   useEffect(() => {
-    let interval;
     if (!isConnected) {
-      const funnyMessages = [
-        "connecting to stranger...",
-        "bribing the matchmaker...",
-        "polishing the pixels...",
-        "waking up the hamsters in the server...",
-        "consulting the crystal ball...",
-        "asking the pixels nicely...",
-        "finding someone awesome...",
-        "gathering digital dust...",
-        "checking for signs of life..."
-      ];
-      let i = 1; // Start from 1 as 0 is "connecting to stranger..."
-      interval = setInterval(() => {
-        setSearchingText(funnyMessages[i % funnyMessages.length]);
-        i++;
-      }, 2500);
+      setSearchingText("Finding a partner...");
     } else {
-      setSearchingText("connecting to stranger...");
+      setSearchingText("");
     }
-    return () => clearInterval(interval);
   }, [isConnected]);
 
   // Reliable auto-hide for matching

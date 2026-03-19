@@ -19,13 +19,6 @@ const ConnectionAura = ({ active }) => {
       {/* Mobile Notch Glow */}
       <div className="notch-glow"></div>
       
-      {/* Desktop/Global Ripple Effect */}
-      <div className="ripple-overlay">
-        <div className="ripple ripple-1"></div>
-        <div className="ripple ripple-2"></div>
-        <div className="ripple ripple-3"></div>
-      </div>
-
       {/* Screen Edge Glow Effect */}
       <div className="edge-glow-container">
         <div className="edge-glow-bar top"></div>
