@@ -15,16 +15,11 @@ const iceServers = {
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    // Metered.ca TURN Servers
+    // AWS Custom TURN Server
     {
-      urls: "turn:global.relay.metered.ca:443",
-      username: "ac675f7e704f87c62cf6ab5a",
-      credential: "JEuecFeIRtJPsQoQ"
-    },
-    {
-      urls: "turn:global.relay.metered.ca:443?transport=tcp",
-      username: "ac675f7e704f87c62cf6ab5a",
-      credential: "JEuecFeIRtJPsQoQ"
+      urls: "turn:54.87.60.6:3478",
+      username: "testuser",
+      credential: "testpassword"
     }
   ],
   iceCandidatePoolSize: 10,
