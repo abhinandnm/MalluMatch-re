@@ -137,7 +137,11 @@ export default function ChatRoom() {
       if (socket.connected) {
         console.log("🚀 Emitting join_queue...");
         socket.emit('join_queue', { type: chatType, interests: userInterests });
-        setStatus('Looking for a partner...');
+        
+        const searchMsg = userInterests.length > 0 
+          ? `Searching for someone who likes: ${userInterests.join(', ')}...`
+          : 'Looking for a partner...';
+        setStatus(searchMsg);
       } else {
         console.log("⏳ Socket not connected, will join on connect.");
       }
@@ -243,9 +247,11 @@ export default function ChatRoom() {
         
         let displayStatus = message;
         if (commonInterests && commonInterests.length > 0) {
-          displayStatus = `You both like: ${commonInterests.join(', ')}.`;
+          displayStatus = `Stranger likes ${commonInterests.join(', ')}`;
         } else if (strangerInterests && strangerInterests.length > 0) {
-          displayStatus = `Stranger is interested in: ${strangerInterests.join(', ')}.`;
+          displayStatus = `Stranger likes: ${strangerInterests.join(', ')}`;
+        } else if (userInterests.length > 0) {
+          displayStatus = `No match found for ${userInterests.join(', ')}. You are now chatting with a random stranger.`;
         }
         
         setStatus(displayStatus || "Partner found! Respect each other and have fun.");
@@ -454,7 +460,10 @@ export default function ChatRoom() {
 
   const handleNext = () => {
     setIsConnected(false);
-    setStatus('Looking for a partner...');
+    const searchMsg = userInterests.length > 0 
+      ? `Searching for someone who likes: ${userInterests.join(', ')}...`
+      : 'Looking for a partner...';
+    setStatus(searchMsg);
     setMessages([]);
     setSharedInterests([]);
     setStrangerInterests([]);
