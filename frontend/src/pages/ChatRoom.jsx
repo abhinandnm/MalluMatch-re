@@ -636,6 +636,9 @@ export default function ChatRoom() {
           {!isConnected ? (
             <div className="stranger-placeholder">
               <div className="glow-circle-outer">
+                <div className="ripple"></div>
+                <div className="ripple"></div>
+                <div className="ripple"></div>
                 <div className="glow-circle-inner">
                   <span key={searchingText} className="searching-text-animation">
                     {searchingText}
