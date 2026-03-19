@@ -53,6 +53,8 @@ class MatchMaker {
     const queue = type === 'video' ? this.videoQueue : this.textQueue;
     
     let partnerIndex = -1;
+    let fallbackIndex = -1;
+
     for (let i = 0; i < queue.length; i++) {
         const p = queue[i];
         const pInterests = p.userInterests || [];
@@ -60,14 +62,18 @@ class MatchMaker {
         const shared = socket.userInterests.filter(int => pInterests.includes(int));
         
         if (shared.length > 0) {
-            // Priority 1: Direct interest match
+            // Priority 1: Direct shared interest match
             partnerIndex = i;
-            break;
-        } else if (socket.userInterests.length === 0 || pInterests.length === 0) {
-            // Priority 2: One or both are "open" (no specific interests)
-            partnerIndex = i;
-            break;
+            break; // Found the best possible match
+        } else if (fallbackIndex === -1 && (socket.userInterests.length === 0 || pInterests.length === 0)) {
+            // Priority 2: One side is "open" - save as fallback
+            fallbackIndex = i;
         }
+    }
+
+    // If no direct match was found, use the first available fallback
+    if (partnerIndex === -1) {
+        partnerIndex = fallbackIndex;
     }
 
     if (partnerIndex !== -1) {
