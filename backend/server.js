@@ -44,7 +44,11 @@ class MatchMaker {
     // If user is already in a queue, remove them first
     this.removeUserFromQueues(socket.id);
     
-    socket.userInterests = Array.isArray(interests) ? interests : [];
+    const normalizedInterests = Array.isArray(interests) 
+      ? interests.map(i => String(i).trim().toLowerCase()).filter(i => i)
+      : [];
+    
+    socket.userInterests = normalizedInterests;
     
     const queue = type === 'video' ? this.videoQueue : this.textQueue;
     
@@ -53,17 +57,16 @@ class MatchMaker {
         const p = queue[i];
         const pInterests = p.userInterests || [];
         
-        if (socket.userInterests.length === 0 && pInterests.length === 0) {
-            // Both have no interests -> match
+        const shared = socket.userInterests.filter(int => pInterests.includes(int));
+        
+        if (shared.length > 0) {
+            // Priority 1: Direct interest match
             partnerIndex = i;
             break;
-        } else if (socket.userInterests.length > 0 && pInterests.length > 0) {
-            // Share at least one interest?
-            const shared = socket.userInterests.filter(int => pInterests.includes(int));
-            if (shared.length > 0) {
-                partnerIndex = i;
-                break;
-            }
+        } else if (socket.userInterests.length === 0 || pInterests.length === 0) {
+            // Priority 2: One or both are "open" (no specific interests)
+            partnerIndex = i;
+            break;
         }
     }
 
@@ -95,12 +98,21 @@ class MatchMaker {
       
       io.to('admins').emit('active_rooms_update', Array.from(this.activeRooms.entries()));
       
-      // Notify both that a match is found
-      io.to(roomId).emit('match_found', { 
+      // Notify both that a match is found with asymmetric interest info
+      partner.emit('match_found', { 
         roomId, 
         type, 
         message: matchMsg,
-        commonInterests: sharedInterests
+        commonInterests: sharedInterests,
+        strangerInterests: socket.userInterests
+      });
+      
+      socket.emit('match_found', { 
+        roomId, 
+        type, 
+        message: matchMsg,
+        commonInterests: sharedInterests,
+        strangerInterests: partner.userInterests
       });
       
       // For WebRTC video chat, assign one as the initiator (polite/impolite pattern)

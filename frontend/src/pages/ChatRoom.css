@@ -427,6 +427,8 @@
 .btn-new-match { border-color: white; }
 .btn-filters { border-color: #666; }
 .btn-report { border-color: var(--accent-orange); }
+.btn-chat { border-color: #666; }
+.btn-chat.active { border-color: var(--accent-purple); background: rgba(124, 58, 237, 0.2); }
 .btn-home { border-color: var(--accent-red); }
 
 .nav-right .side-actions {
@@ -448,18 +450,6 @@
   align-items: center;
   opacity: 0.8;
   transition: opacity 0.2s;
-}
-
-.chat-trigger:hover, .menu-grid-btn:hover {
-  opacity: 1;
-}
-
-.chat-trigger .action-label {
-  position: absolute;
-  bottom: -22px;
-  font-size: 0.7rem;
-  color: var(--text-dim);
-  white-space: nowrap;
 }
 
 .menu-grid-btn .arrow-hint {
@@ -707,12 +697,9 @@
     display: none;
   }
 
-  /* Chat toggle keeps its icon, compacted */
+  /* Chat toggle icon padding adaptation */
   .chat-trigger {
     padding: 6px;
-  }
-  .chat-trigger .action-label {
-    display: none;
   }
 
   /* --- Floating Chat → Full-screen bottom sheet on mobile --- */

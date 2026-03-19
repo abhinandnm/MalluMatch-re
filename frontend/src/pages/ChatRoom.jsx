@@ -689,7 +689,11 @@ export default function ChatRoom() {
             <Shield size={24} />
           </button>
 
-          <button className="nav-circle-btn btn-emoji" title="Emoji Reactions">
+          <button 
+            className={`nav-circle-btn btn-chat ${showChat ? 'active' : ''}`} 
+            onClick={() => { playSfx(tapSound); setShowChat(!showChat); }} 
+            title="Toggle Chat"
+          >
             <MessageSquare size={24} />
           </button>
 
@@ -699,11 +703,7 @@ export default function ChatRoom() {
         </div>
 
         <div className="nav-right">
-          <div className="side-actions">
-            <button className={`chat-trigger ${showChat ? 'active' : ''}`} onClick={() => setShowChat(!showChat)} title="Toggle Chat">
-              <MessageSquare size={22} />
-            </button>
-          </div>
+          {/* Empty right section to maintain flex balance */}
         </div>
       </div>
 
