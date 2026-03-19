@@ -36,7 +36,8 @@ export default function ChatRoom() {
   const chatType = location.state?.type || 'text';
   const userInterests = location.state?.interests || [];
   
-  const [status, setStatus] = useState('Connecting to server...');
+  const [status, setStatus] = useState('Checking connectivity...');
+  const [searchingText, setSearchingText] = useState('connecting to stranger...');
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -386,7 +387,33 @@ export default function ChatRoom() {
       socket.off('banned');
       if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
     };
-    }, [chatType, setupMedia]);
+    }, [chatType, userInterests, setupMedia]);
+
+  // Handle rotating funny messages while searching
+  useEffect(() => {
+    let interval;
+    if (!isConnected) {
+      const funnyMessages = [
+        "connecting to stranger...",
+        "bribing the matchmaker...",
+        "polishing the pixels...",
+        "waking up the hamsters in the server...",
+        "consulting the crystal ball...",
+        "asking the pixels nicely...",
+        "finding someone awesome...",
+        "gathering digital dust...",
+        "checking for signs of life..."
+      ];
+      let i = 1; // Start from 1 as 0 is "connecting to stranger..."
+      interval = setInterval(() => {
+        setSearchingText(funnyMessages[i % funnyMessages.length]);
+        i++;
+      }, 2500);
+    } else {
+      setSearchingText("connecting to stranger...");
+    }
+    return () => clearInterval(interval);
+  }, [isConnected]);
 
   // Reliable auto-hide for matching
   useEffect(() => {
@@ -610,7 +637,9 @@ export default function ChatRoom() {
             <div className="stranger-placeholder">
               <div className="glow-circle-outer">
                 <div className="glow-circle-inner">
-                  <span>stranger</span>
+                  <span style={{ fontSize: '0.9rem', textAlign: 'center', padding: '0 10px', lineHeight: '1.2' }}>
+                    {searchingText}
+                  </span>
                 </div>
               </div>
             </div>
