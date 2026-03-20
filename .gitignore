@@ -1,2 +1,6 @@
 node_modules/  
 .env  
+MalluMatch_Deploy.zip
+backups/
+*.ps1
+git_log_*.txt
