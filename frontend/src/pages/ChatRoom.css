@@ -296,12 +296,20 @@
 }
 
 .funny-message-text {
-  font-size: 0.95rem;
-  font-weight: 500;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
   line-height: 1.4;
-  color: #fff;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  letter-spacing: -0.012em;
+  background: linear-gradient(to bottom, #ffffff, #cbd5e1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   animation: text-fade-in-out 3.5s infinite ease-in-out;
+  max-width: 90%;
+  text-wrap: balance;
+  display: block;
 }
 
 @keyframes text-fade-in-out {
