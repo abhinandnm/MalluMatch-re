@@ -219,46 +219,94 @@
   gap: 20px;
 }
 
-.glow-circle-outer {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* Premium Loader Styles */
+.premium-loader-container {
   position: relative;
-}
-
-.glow-circle-inner {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  width: min(280px, 80vw);
+  height: min(280px, 80vw);
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(5px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 30px rgba(124, 58, 237, 0.3);
 }
 
-.glow-circle-inner span {
-  font-size: 0.9rem;
+.pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  background: transparent;
+}
+
+.ring-1 {
+  width: 100%;
+  height: 100%;
+  animation: pulse-ring-premium 4s infinite linear;
+}
+
+.ring-2 {
+  width: 80%;
+  height: 80%;
+  animation: pulse-ring-premium 4s infinite linear 1s;
+}
+
+.ring-3 {
+  width: 60%;
+  height: 60%;
+  animation: pulse-ring-premium 4s infinite linear 2.5s;
+}
+
+@keyframes pulse-ring-premium {
+  0% { transform: scale(0.6); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+.scanner-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-purple), transparent);
+  box-shadow: 0 0 15px var(--accent-purple);
+  opacity: 0.5;
+  z-index: 5;
+  animation: scanner-move 3s infinite ease-in-out;
+}
+
+@keyframes scanner-move {
+  0% { top: 10%; opacity: 0; }
+  50% { opacity: 1; }
+  100% { top: 90%; opacity: 0; }
+}
+
+.glow-circle-inner.premium {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(124, 58, 237, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 0 40px rgba(124, 58, 237, 0.2), inset 0 0 20px rgba(124, 58, 237, 0.1);
+  z-index: 10;
+}
+
+.funny-message-text {
+  font-size: 0.95rem;
   font-weight: 500;
-  opacity: 0.8;
+  line-height: 1.4;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  animation: text-fade-in-out 3.5s infinite ease-in-out;
 }
 
-.loading-hint {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
-  font-style: italic;
-}
-
-@keyframes pulse-ring {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.05); opacity: 0.3; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+@keyframes text-fade-in-out {
+  0%, 100% { opacity: 0.2; transform: translateY(5px); filter: blur(2px); }
+  20%, 80% { opacity: 1; transform: translateY(0); filter: blur(0); }
 }
 
 .remote-video {

@@ -17,18 +17,31 @@ const iceServers = {
     { urls: 'stun:stun2.l.google.com:19302' },
     // AWS Custom TURN Server
     {
-      urls: "turn:54.87.60.6:3478",
+      urls: "turn:3.80.85.179:3478",
       username: "testuser",
       credential: "testpassword"
     },
     {
-      urls: "turn:54.87.60.6:3478?transport=tcp",
+      urls: "turn:3.80.85.179:3478?transport=tcp",
       username: "testuser",
       credential: "testpassword"
     }
   ],
   iceCandidatePoolSize: 10,
 };
+
+const FUNNY_MESSAGES = [
+  "Searching for your soulmate (or just someone with a weird cat)...",
+  "Polishing the webcam lens for you...",
+  "Convincing a stranger that you're worth talking to...",
+  "Scanning the universe for life forms...",
+  "Booting up the friendship engine...",
+  "Asking the internet gods for a good match...",
+  "Translating 'Hello' into 100 languages just in case...",
+  "Finding someone who won't disconnect immediately...",
+  "Sorting through 1 million 'Hi' messages...",
+  "Adjusting the awkwardness levels..."
+];
 
 export default function ChatRoom() {
   const location = useLocation();
@@ -37,7 +50,7 @@ export default function ChatRoom() {
   const userInterests = location.state?.interests || [];
   
   const [status, setStatus] = useState('Finding a match...');
-  const [searchingText, setSearchingText] = useState('searching for a partner...');
+  const [searchingText, setSearchingText] = useState(FUNNY_MESSAGES[0]);
   const [messages, setMessages] = useState([]);
   const [inputMsg, setInputMsg] = useState('');
   const [isConnected, setIsConnected] = useState(false);
@@ -55,6 +68,21 @@ export default function ChatRoom() {
   const [modelLoading, setModelLoading] = useState(false);
   const nsfwModelRef = useRef(null);
   const checkIntervalRef = useRef(null);
+  
+  // Rotating funny messages effect
+  useEffect(() => {
+    if (isConnected) return;
+    
+    const interval = setInterval(() => {
+      setSearchingText(prev => {
+        const currentIndex = FUNNY_MESSAGES.indexOf(prev);
+        const nextIndex = (currentIndex + 1) % FUNNY_MESSAGES.length;
+        return FUNNY_MESSAGES[nextIndex];
+      });
+    }, 3500);
+    
+    return () => clearInterval(interval);
+  }, [isConnected]);
 
   const FILTERS = [
     { id: 'none', label: 'None', color: '#64748b' },
@@ -389,11 +417,9 @@ export default function ChatRoom() {
     };
     }, [chatType, userInterests, setupMedia]);
 
-  // Handle searching text
+  // Handle searching text cleanup
   useEffect(() => {
-    if (!isConnected) {
-      setSearchingText("Finding a partner...");
-    } else {
+    if (isConnected) {
       setSearchingText("");
     }
   }, [isConnected]);
@@ -618,9 +644,13 @@ export default function ChatRoom() {
         <div className="video-container-primary">
           {!isConnected ? (
             <div className="stranger-placeholder">
-              <div className="glow-circle-outer">
-                <div className="glow-circle-inner">
-                  <span style={{ fontSize: '0.9rem', textAlign: 'center', padding: '0 10px', lineHeight: '1.2' }}>
+              <div className="premium-loader-container">
+                <div className="pulse-ring ring-1"></div>
+                <div className="pulse-ring ring-2"></div>
+                <div className="pulse-ring ring-3"></div>
+                <div className="scanner-line"></div>
+                <div className="glow-circle-inner premium">
+                  <span className="funny-message-text">
                     {searchingText}
                   </span>
                 </div>
