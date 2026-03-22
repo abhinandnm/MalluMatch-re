@@ -5,9 +5,11 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(cors());
+app.use(express.json()); // Allow parsing JSON bodies
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -202,6 +204,118 @@ try {
 } catch (err) {
   console.error('Error loading settings.json:', err);
 }
+
+const usersPath = path.join(__dirname, 'users.json');
+let users = [];
+try {
+  if (fs.existsSync(usersPath)) {
+    users = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
+  }
+} catch (err) {
+  console.error('Error loading users.json:', err);
+}
+
+const saveUsers = () => {
+  fs.writeFileSync(usersPath, JSON.stringify(users, null, 2));
+};
+
+// OTP Storage (In-memory for demo)
+const pendingOTPs = new Map();
+
+// Nodemailer Config
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS
+  }
+});
+
+// Auth Endpoints
+app.post('/api/signup', async (req, res) => {
+  const { username, password, email } = req.body;
+  if (!username || !password || !email) {
+    return res.status(400).json({ success: false, message: 'Username, password, and email required' });
+  }
+  if (users.find(u => u.username === username || u.email === email)) {
+    return res.status(400).json({ success: false, message: 'Username or email already exists' });
+  }
+
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Store pending user
+  pendingOTPs.set(email, { 
+    username, 
+    password, 
+    otp, 
+    expires: Date.now() + 10 * 60 * 1000 // 10 minutes
+  });
+
+  // Send Email
+  try {
+    await transporter.sendMail({
+      from: `"MalluMatch" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: "Your MalluMatch OTP Verification Code",
+      text: `Welcome to MalluMatch! Your verification code is: ${otp}. It will expire in 10 minutes.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+          <h2 style="color: #ff3366; text-align: center;">Welcome to MalluMatch!</h2>
+          <p>You're almost there! Use the following code to complete your registration:</p>
+          <div style="background: #f4f4f4; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #333; border-radius: 5px;">
+            ${otp}
+          </div>
+          <p style="color: #666; font-size: 14px; margin-top: 20px;">This code will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
+        </div>
+      `
+    });
+    res.json({ success: true, message: 'OTP sent to your email' });
+  } catch (err) {
+    console.error('Error sending OTP:', err);
+    res.status(500).json({ success: false, message: 'Failed to send OTP. Check your email config.' });
+  }
+});
+
+app.post('/api/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+  const pending = pendingOTPs.get(email);
+
+  if (!pending) {
+    return res.status(400).json({ success: false, message: 'OTP expired or not found' });
+  }
+
+  if (pending.otp !== otp) {
+    return res.status(400).json({ success: false, message: 'Invalid OTP code' });
+  }
+
+  if (Date.now() > pending.expires) {
+    pendingOTPs.delete(email);
+    return res.status(400).json({ success: false, message: 'OTP has expired' });
+  }
+
+  // Success: Create User
+  const newUser = { 
+    username: pending.username, 
+    password: pending.password, 
+    email: email 
+  };
+  users.push(newUser);
+  saveUsers();
+  pendingOTPs.delete(email);
+
+  res.json({ success: true, message: 'Account verified and created successfully' });
+});
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find(u => u.username === username && u.password === password);
+  if (user) {
+    res.json({ success: true, token: 'demo-token-' + Date.now(), username });
+  } else {
+    res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+});
 
 const saveSettings = () => {
   const data = {
