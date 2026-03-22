@@ -243,6 +243,9 @@ try {
     if (parsed.currentAnnouncement !== undefined) {
       currentAnnouncement = parsed.currentAnnouncement;
     }
+    if (parsed.bannedIPs) {
+      parsed.bannedIPs.forEach(ip => bannedIPs.add(ip));
+    }
   }
 } catch (err) {
   console.error('Error loading settings.json:', err);
@@ -363,7 +366,8 @@ app.post('/api/login', (req, res) => {
 const saveSettings = () => {
   const data = {
     userCountSettings,
-    currentAnnouncement
+    currentAnnouncement,
+    bannedIPs: Array.from(bannedIPs)
   };
   fs.writeFile(settingsPath, JSON.stringify(data, null, 2), (err) => {
     if (err) console.error('Error saving settings.json:', err);
@@ -593,22 +597,33 @@ io.on('connection', (socket) => {
 
   socket.on('admin_ban', ({ targetIP, targetId }) => {
     if (!socket.rooms.has('admins')) return;
-    bannedIPs.add(targetIP);
     
-    const targetSocket = io.sockets.sockets.get(targetId);
-    if (targetSocket) {
-      targetSocket.emit('banned', { message: 'Your IP has been banned.' });
-      targetSocket.disconnect();
-    } else {
-       for (const [sId, ip] of matchMaker.userIPs) {
-          if (ip === targetIP) {
-             const s = io.sockets.sockets.get(sId);
-             if (s) s.disconnect();
-          }
-       }
+    let ipToBan = targetIP;
+    
+    // Fallback: if IP is missing from chat feed logs, try to find it from current session
+    if (!ipToBan && targetId) {
+      ipToBan = matchMaker.userIPs.get(targetId);
     }
-    // Notify all admins of the update
-    io.to('admins').emit('update_banned_ips', Array.from(bannedIPs));
+    
+    if (ipToBan) {
+      bannedIPs.add(ipToBan);
+      saveSettings();
+      
+      const targetSocket = io.sockets.sockets.get(targetId);
+      if (targetSocket) {
+        targetSocket.emit('banned', { message: 'Your IP has been banned.' });
+        targetSocket.disconnect();
+      } else {
+         for (const [sId, ip] of matchMaker.userIPs) {
+            if (ip === ipToBan) {
+               const s = io.sockets.sockets.get(sId);
+               if (s) s.disconnect();
+            }
+         }
+      }
+      // Notify all admins of the update
+      io.to('admins').emit('update_banned_ips', Array.from(bannedIPs));
+    }
   });
 
   socket.on('disconnect', () => {
