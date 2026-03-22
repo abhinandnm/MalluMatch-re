@@ -9,7 +9,6 @@ import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
 import AdminPortal from './pages/AdminPortal';
-import LoginPage from './pages/LoginPage';
 import AgeVerification from './components/AgeVerification';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import Article1 from './pages/blog/Article1';
@@ -24,7 +23,6 @@ import SEOUpdater from './components/SEOUpdater';
 const AppWrapper = () => {
   const [ageVerified, setAgeVerified] = useState(false);
   const [announcement, setAnnouncement] = useState('');
-  const [user, setUser] = useState(localStorage.getItem('username'));
   const chimeSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3'));
 
   useEffect(() => {
@@ -55,14 +53,12 @@ const AppWrapper = () => {
         setAgeVerified={setAgeVerified}
         announcement={announcement} 
         setAnnouncement={setAnnouncement} 
-        user={user}
-        setUser={setUser}
       />
     </Router>
   );
 };
 
-const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement, user, setUser }) => {
+const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement }) => {
   const location = useLocation();
   const isChatPage = location.pathname === '/chat';
   const isAdminPage = location.pathname === '/admin-portal';
@@ -74,8 +70,7 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
       <main className={`main-content ${isChatPage ? 'no-padding' : ''}`}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<LoginPage onLogin={(u) => setUser(u)} />} />
-          <Route path="/chat" element={user ? <ChatRoom /> : <LoginPage onLogin={(u) => setUser(u)} />} />
+          <Route path="/chat" element={<ChatRoom />} />
           <Route path="/about" element={<About />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />

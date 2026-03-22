@@ -62,13 +62,14 @@ const iceServers = {
 };
 ```
 
-## Pushing to GitHub
+
+## Pushing to a Remote Repository
 
 1. Initialize git at the root directory: `git init`
 2. Create `.gitignore` file including `node_modules` and `.env`.
 3. Stage changes: `git add .`
 4. Commit: `git commit -m "Initial commit"`
-5. Link remote repository: `git remote add origin https://github.com/yourusername/mallumatch.git`
+5. Link your remote repository: `git remote add origin <your-repository-url>`
 6. Push code: `git push -u origin main`
 
 
