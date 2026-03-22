@@ -21,10 +21,53 @@ const io = new Server(server, {
 
 const bannedIPs = new Set();
 const reports = [];
-const liveLogs = []; // Feed of all text messages
+const pastSessions = []; // Past 12 hours sessions
 const safetyViolations = [];
 const userStrikes = new Map(); // IP -> count
-const pastSessions = []; // Past 12 hours sessions
+
+const chatLogsPath = path.join(__dirname, 'chat_logs.json');
+let liveLogs = []; // Feed of all text messages
+
+// Initial load of chat logs
+try {
+  if (fs.existsSync(chatLogsPath)) {
+    const data = fs.readFileSync(chatLogsPath, 'utf8');
+    liveLogs = JSON.parse(data);
+    
+    // Initial cleanup of old messages (> 24h)
+    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+    liveLogs = liveLogs.filter(log => log.timestamp > twentyFourHoursAgo);
+  }
+} catch (err) {
+  console.error('Error loading chat_logs.json:', err);
+}
+
+const saveChatLogs = () => {
+  try {
+    fs.writeFileSync(chatLogsPath, JSON.stringify(liveLogs, null, 2));
+  } catch (err) {
+    console.error('Error saving chat_logs.json:', err);
+  }
+};
+
+// Periodic cleanup every hour
+setInterval(() => {
+  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+  const initialLength = liveLogs.length;
+  liveLogs = liveLogs.filter(log => log.timestamp > twentyFourHoursAgo);
+  if (liveLogs.length !== initialLength) {
+    saveChatLogs();
+    io.to('admins').emit('admin_auth_success', { 
+       reports, 
+       liveLogs, 
+       bannedIPs: Array.from(bannedIPs),
+       userCountSettings,
+       safetyViolations,
+       activeRooms: Array.from(matchMaker.activeRooms.entries()),
+       pastSessions
+    });
+  }
+}, 60 * 60 * 1000);
 
 class MatchMaker {
   constructor() {
@@ -381,9 +424,16 @@ io.on('connection', (socket) => {
   socket.on('chat_message', (msg) => {
     const roomId = matchMaker.userRooms.get(socket.id);
     if (roomId) {
-      const logEntry = { roomId, sender: socket.id, text: msg, time: new Date().toLocaleTimeString() };
+      const logEntry = { 
+        roomId, 
+        sender: socket.id, 
+        ip: matchMaker.userIPs.get(socket.id),
+        text: msg, 
+        time: new Date().toLocaleTimeString(),
+        timestamp: Date.now()
+      };
       liveLogs.push(logEntry);
-      if (liveLogs.length > 100) liveLogs.shift();
+      saveChatLogs();
 
       const room = matchMaker.activeRooms.get(roomId);
       if (room) {
@@ -542,7 +592,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('admin_ban', ({ targetIP, targetId }) => {
-    if (!admins.has(socket.id)) return;
+    if (!socket.rooms.has('admins')) return;
     bannedIPs.add(targetIP);
     
     const targetSocket = io.sockets.sockets.get(targetId);

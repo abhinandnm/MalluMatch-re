@@ -519,7 +519,66 @@
   display: flex;
   gap: 0.75rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding-bottom: 0.25rem;
+  padding: 0.5rem 0;
+}
+
+.chat-feed-entry {
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.chat-feed-entry:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.log-main {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1;
+  align-items: center;
+}
+
+.log-actions {
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.chat-feed-entry:hover .log-actions {
+  opacity: 1;
+}
+
+.mini-action-btn {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: bold;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.mini-action-btn.kick {
+  color: #ef4444;
+  background: #450a0a;
+  border: 1px solid #7f1d1d;
+}
+
+.mini-action-btn.kick:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.mini-action-btn.ban {
+  color: white;
+  background: #b91c1c;
+}
+
+.mini-action-btn.ban:hover {
+  background: #ef4444;
 }
 
 .log-time { color: #64748b; }

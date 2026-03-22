@@ -52,7 +52,7 @@ export default function AdminPortal() {
       });
 
       socket.on('live_chat_log', (log) => {
-         setLogs(prev => [...prev.slice(-99), log]);
+         setLogs(prev => [...prev, log]);
       });
 
       socket.on('update_banned_ips', (updatedList) => {
@@ -392,10 +392,16 @@ export default function AdminPortal() {
                <h2><Send size={22} color="#2563eb" /> Live Global Chat Feed</h2>
                <div className="logs-container">
                   {logs.map((l, i) => (
-                     <div key={i} className="log-entry">
-                        <span className="log-time">[{l.time}]</span>
-                        <span className="log-room">Room {l.roomId?.substring(5, 11) || '???'}:</span>
-                        <span className="log-text">{l.text}</span>
+                     <div key={i} className="log-entry chat-feed-entry">
+                        <div className="log-main">
+                           <span className="log-time">[{l.time}]</span>
+                           <span className="log-room">Room {l.roomId?.substring(5, 11) || '???'}:</span>
+                           <span className="log-text">{l.text}</span>
+                        </div>
+                        <div className="log-actions">
+                           <button onClick={() => handleKick(l.sender)} className="mini-action-btn kick" title="Kick User">Kick</button>
+                           <button onClick={() => handleBan(l.ip, l.sender)} className="mini-action-btn ban" title="Ban IP">Ban</button>
+                        </div>
                      </div>
                   ))}
                   <div ref={logEndRef} />
