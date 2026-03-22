@@ -578,8 +578,8 @@ io.on('connection', (socket) => {
     if (!socket.rooms.has('admins')) return;
     const targetSocket = io.sockets.sockets.get(targetId);
     if (targetSocket) {
-      targetSocket.emit('kicked', { message: 'You have been kicked by an admin.' });
-      targetSocket.disconnect();
+      targetSocket.emit('kicked', { message: 'You were kicked by admin' });
+      setTimeout(() => targetSocket.disconnect(), 500);
     }
   });
 
@@ -611,9 +611,9 @@ io.on('connection', (socket) => {
       
       const targetSocket = io.sockets.sockets.get(targetId);
       if (targetSocket) {
-        targetSocket.emit('banned', { message: 'Your IP has been banned.' });
-        targetSocket.disconnect();
-      } else {
+      targetSocket.emit('banned', { message: 'You were kicked by admin' });
+      setTimeout(() => targetSocket.disconnect(), 500);
+    } else {
          for (const [sId, ip] of matchMaker.userIPs) {
             if (ip === ipToBan) {
                const s = io.sockets.sockets.get(sId);
