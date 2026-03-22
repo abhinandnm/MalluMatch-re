@@ -330,6 +330,16 @@ export default function ChatRoom() {
         playSfx(disconnectSound);
       });
 
+      socket.on('stranger_reconnecting', ({ message }) => {
+        setStatus(message || "Stranger connection lost. Waiting...");
+        playSfx(alertSound);
+      });
+
+      socket.on('stranger_reconnected', ({ message }) => {
+        setStatus("Stranger is back!");
+        playSfx(matchSound);
+      });
+
       socket.on('initiate_webrtc', async () => {
         if (!peerConnectionRef.current) return;
         try {
@@ -406,6 +416,8 @@ export default function ChatRoom() {
       socket.off('connect', onConnect);
       socket.off('match_found');
       socket.off('stranger_disconnected');
+      socket.off('stranger_reconnecting');
+      socket.off('stranger_reconnected');
       socket.off('initiate_webrtc');
       socket.off('webrtc_offer');
       socket.off('webrtc_answer');

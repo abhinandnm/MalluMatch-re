@@ -16,7 +16,15 @@ const io = new Server(server, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
-  }
+  },
+  connectionStateRecovery: {
+    // max 2 mins of state recovery
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    // whether to expose backup data in the handshake
+    skipMiddlewares: true,
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 const bannedIPs = new Set();
@@ -76,6 +84,7 @@ class MatchMaker {
     this.activeRooms = new Map(); // roomId -> { user1, user2, type }
     this.userRooms = new Map(); // socketId -> roomId
     this.userIPs = new Map(); // socketId -> IP
+    this.pendingDisconnections = new Map(); // socketId -> timeoutId
   }
 
   addUser(socket, type, interests = []) {
@@ -181,42 +190,91 @@ class MatchMaker {
     this.textQueue = this.textQueue.filter(s => s.id !== socketId);
   }
 
-  handleDisconnect(socket) {
+  handleDisconnect(socket, force = false) {
     // 1. Remove from queues
     this.removeUserFromQueues(socket.id);
     
-    // 2. Remove from active rooms and notify partner
+    // 2. Handle room cleanup
     const roomId = this.userRooms.get(socket.id);
-    if (roomId) {
-      const room = this.activeRooms.get(roomId);
-      if (room) {
-        const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-        io.to(partnerId).emit('stranger_disconnected', { message: 'Stranger has disconnected.' });
-        
-        // Remove room metadata
-        room.endTime = Date.now();
-        pastSessions.unshift({ roomId, ...room });
-        if (pastSessions.length > 500) pastSessions.length = 500; // Keep up to 500
-        
-        this.activeRooms.delete(roomId);
-        this.userRooms.delete(partnerId);
-        
-        io.to('admins').emit('active_rooms_update', Array.from(this.activeRooms.entries()));
-        io.to('admins').emit('past_sessions_update', pastSessions);
-        
-        // Partner leaves the socket room
-        const partnerSocket = io.sockets.sockets.get(partnerId);
-        if (partnerSocket) {
-          partnerSocket.leave(roomId);
+    if (!roomId) return;
+
+    if (force) {
+      // Clear any pending timeout
+      const existingTimeout = this.pendingDisconnections.get(socket.id);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+        this.pendingDisconnections.delete(socket.id);
+      }
+      this.terminateRoom(socket.id, roomId);
+      return;
+    }
+
+    // Accidental disconnect - start grace period
+    if (this.pendingDisconnections.has(socket.id)) return;
+
+    const room = this.activeRooms.get(roomId);
+    if (room) {
+      const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
+      
+      // Notify partner that stranger is reconnecting
+      io.to(partnerId).emit('stranger_reconnecting', { message: 'Stranger connection lost. Waiting for reconnection...' });
+
+      // Start grace period timeout
+      const timeoutId = setTimeout(() => {
+        this.terminateRoom(socket.id, roomId);
+      }, 60000); // 60 seconds grace period
+
+      this.pendingDisconnections.set(socket.id, timeoutId);
+    }
+  }
+
+  terminateRoom(socketId, roomId) {
+    const room = this.activeRooms.get(roomId);
+    if (!room) return;
+
+    const partnerId = room.user1 === socketId ? room.user2 : room.user1;
+    io.to(partnerId).emit('stranger_disconnected', { message: 'Stranger has left the chat.' });
+
+    // Remove room metadata
+    room.endTime = Date.now();
+    pastSessions.unshift({ roomId, ...room });
+    if (pastSessions.length > 500) pastSessions.length = 500;
+
+    this.activeRooms.delete(roomId);
+    this.userRooms.delete(partnerId);
+    this.userRooms.delete(socketId);
+    this.pendingDisconnections.delete(socketId);
+
+    io.to('admins').emit('active_rooms_update', Array.from(this.activeRooms.entries()));
+    io.to('admins').emit('past_sessions_update', pastSessions);
+
+    const partnerSocket = io.sockets.sockets.get(partnerId);
+    if (partnerSocket) {
+      partnerSocket.leave(roomId);
+    }
+  }
+
+  handleReconnect(socket) {
+    // Clear any pending disconnection timeout
+    const timeoutId = this.pendingDisconnections.get(socket.id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      this.pendingDisconnections.delete(socket.id);
+      
+      const roomId = this.userRooms.get(socket.id);
+      if (roomId) {
+        const room = this.activeRooms.get(roomId);
+        if (room) {
+          const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
+          io.to(partnerId).emit('stranger_reconnected', { message: 'Stranger is back!' });
         }
       }
-      this.userRooms.delete(socket.id);
     }
   }
 
   next(socket, type, interests = []) {
-    // Treat as a disconnect from current chat, then re-enter queue
-    this.handleDisconnect(socket);
+    // Treat as a FORCE disconnect from current chat, then re-enter queue
+    this.handleDisconnect(socket, true);
     this.addUser(socket, type, interests);
   }
 }
@@ -382,8 +440,14 @@ const broadcastUserCount = () => {
 };
 
 io.on('connection', (socket) => {
-  onlineUsers++;
-  broadcastUserCount();
+  if (socket.recovered) {
+    // Connection state was recovered
+    matchMaker.handleReconnect(socket);
+  } else {
+    // New connection
+    onlineUsers++;
+    broadcastUserCount();
+  }
   
   // Send the current global announcement to newly connected users if it exists
   if (currentAnnouncement) {
@@ -399,7 +463,7 @@ io.on('connection', (socket) => {
   });
   
   socket.on('stop_chat', () => {
-    matchMaker.handleDisconnect(socket);
+    matchMaker.handleDisconnect(socket, true); // Force immediate disconnect
   });
 
   // Signaling messages for WebRTC
