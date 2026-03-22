@@ -20,6 +20,7 @@ export default function AdminPortal() {
    const [pastSessions, setPastSessions] = useState([]);
    const [sessionType, setSessionType] = useState('video'); // 'video' or 'text'
    const [sessionView, setSessionView] = useState('active'); // 'active' or 'past'
+   const [selectedRoomId, setSelectedRoomId] = useState(null);
 
    const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -276,7 +277,7 @@ export default function AdminPortal() {
                <div className="session-grid">
                   {displayRooms.length === 0 && <p className="empty-msg">No {sessionType} sessions found.</p>}
                   {displayRooms.map((room, index) => (
-                     <div key={room.id} className="session-card">
+                     <div key={room.id} className="session-card clickable" onClick={() => setSelectedRoomId(room.id)}>
                         <div className="session-card-header">
                            <h3>Room {room.id.substring(room.id.length - 6).toUpperCase()}</h3>
                            <span className={`status-indicator ${sessionView === 'active' ? 'active' : 'inactive'}`}>
@@ -319,7 +320,7 @@ export default function AdminPortal() {
                            )}
                         </div>
 
-                        <div className="session-card-actions">
+                        <div className="session-card-actions" onClick={(e) => e.stopPropagation()}>
                            <button onClick={() => handleKick(room.user1)} className="action-kick">[ KICK USER {room.user1.substring(0, 4)} ]</button>
                            <button onClick={() => handleKick(room.user2)} className="action-kick">[ KICK USER {room.user2.substring(0, 4)} ]</button>
                            {sessionView === 'active' && (
