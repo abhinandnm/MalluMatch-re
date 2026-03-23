@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://13.60.217.184:5000';
 const socket = io(SOCKET_URL, {
   autoConnect: true,
   reconnection: true,
