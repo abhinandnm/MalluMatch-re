@@ -643,6 +643,12 @@
 /* Initially hide if we want cleaner look */
 /* .snap-download-btn { opacity: 0; visibility: hidden; } */
 
+.section-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .download-chat-btn {
   display: flex;
   align-items: center;
@@ -658,9 +664,17 @@
   transition: all 0.2s;
 }
 
+.download-chat-btn.comprehensive {
+  background: #6366f1;
+}
+
 .download-chat-btn:hover {
   background: #2563eb;
   transform: translateY(-1px);
+}
+
+.download-chat-btn.comprehensive:hover {
+  background: #4f46e5;
 }
 
 .download-chat-btn:active {

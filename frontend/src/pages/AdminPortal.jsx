@@ -236,6 +236,112 @@ export default function AdminPortal() {
       document.body.removeChild(link);
    };
 
+   const handleExportAllHTML = () => {
+      if (displayRooms.length === 0) return;
+
+      const timestamp = new Date().toLocaleString();
+      const reportTitle = `MalluMatch - ${sessionType === 'video' ? 'Video' : 'Text'} Chat Session Report`;
+      
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+   <title>${reportTitle}</title>
+   <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0f172a; color: #f1f5f9; padding: 40px; margin: 0; }
+      .container { max-width: 1200px; margin: 0 auto; }
+      .header { border-bottom: 2px solid #334155; padding-bottom: 20px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: flex-end; }
+      .header h1 { margin: 0; color: #3b82f6; font-size: 2rem; }
+      .header .meta { color: #94a3b8; font-size: 0.9rem; }
+      .session-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 30px; }
+      .session-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; padding: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+      .room-title { font-size: 1.25rem; font-weight: bold; margin-bottom: 15px; color: #f8fafc; border-bottom: 1px solid #334155; padding-bottom: 10px; display: flex; justify-content: space-between; }
+      .users-container { display: flex; gap: 20px; margin-bottom: 20px; }
+      .user-box { flex: 1; text-align: center; }
+      .user-id { font-size: 0.8rem; color: #94a3b8; display: block; margin-bottom: 8px; font-family: monospace; }
+      .snapshot { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; background: #000; border: 1px solid #334155; }
+      .no-snapshot { height: 150px; display: flex; align-items: center; justify-content: center; background: #334155; border-radius: 8px; color: #64748b; font-size: 0.8rem; }
+      .chat-log { background: #0f172a; border-radius: 8px; border: 1px solid #334155; padding: 12px; height: 150px; overflow-y: auto; font-family: monospace; font-size: 0.85rem; }
+      .log-entry { margin-bottom: 4px; line-height: 1.4; border-bottom: 1px solid #1e293b; padding-bottom: 2px; }
+      .log-sender { color: #3b82f6; font-weight: bold; margin-right: 8px; }
+      .log-text { color: #cbd5e1; }
+      .stats { display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.8rem; color: #64748b; font-weight: bold; }
+      @media print { body { background: white; color: black; padding: 20px; } .session-card { break-inside: avoid; border: 1px solid #ccc; background: white; color: black; } }
+   </style>
+</head>
+<body>
+   <div class="container">
+      <div class="header">
+         <div>
+            <p style="color: #64748b; margin: 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Admin Export</p>
+            <h1>${reportTitle}</h1>
+         </div>
+         <div class="meta">
+            Generated: ${timestamp}<br>
+            Showing: ${displayRooms.length} Sessions (${sessionView === 'active' ? 'Live' : 'Past 24h'})
+         </div>
+      </div>
+      
+      <div class="session-grid">
+         ${displayRooms.map(room => {
+            const duration = formatDuration(room.startTime, room.endTime);
+            const startTime = new Date(room.startTime).toLocaleString();
+            
+            return `
+            <div class="session-card">
+               <div class="room-title">
+                  <span>Room ${room.id.substring(room.id.length - 6).toUpperCase()}</span>
+                  <span style="color: ${sessionView === 'active' ? '#10b981' : '#64748b'}; font-size: 0.7rem;">● ${sessionView === 'active' ? 'ACTIVE' : 'ENDED'}</span>
+               </div>
+               
+               <div class="users-container">
+                  <div class="user-box">
+                     <span class="user-id">USER ID: ${room.user1.substring(0, 8)}</span>
+                     ${room.snapshots?.[room.user1] ? `<img class="snapshot" src="${room.snapshots[room.user1]}">` : `<div class="no-snapshot">No Snapshot</div>`}
+                  </div>
+                  <div class="user-box">
+                     <span class="user-id">USER ID: ${room.user2.substring(0, 8)}</span>
+                     ${room.snapshots?.[room.user2] ? `<img class="snapshot" src="${room.snapshots[room.user2]}">` : `<div class="no-snapshot">No Snapshot</div>`}
+                  </div>
+               </div>
+               
+               <div class="chat-log">
+                  ${room.chatLogs?.length === 0 ? '<div style="color: #475569; text-align: center; padding-top: 60px;">No messages sent</div>' : 
+                    room.chatLogs.map(log => `
+                     <div class="log-entry">
+                        <span class="log-sender">[${log.sender.substring(0, 4)}]:</span>
+                        <span class="log-text">${log.text}</span>
+                     </div>
+                    `).join('')
+                  }
+               </div>
+               
+               <div class="stats">
+                  <span>Started: ${startTime}</span>
+                  <span>Duration: ${duration}</span>
+               </div>
+            </div>
+            `;
+         }).join('')}
+      </div>
+   </div>
+</body>
+</html>`;
+
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const filenamePrefix = sessionView === 'active' ? 'active_report' : 'past_sessions_report';
+      const fileTimestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      
+      link.href = url;
+      link.download = `mallumatch_${filenamePrefix}_${fileTimestamp}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+   };
+
    const formatDuration = (startTime, endTime) => {
       const end = endTime || currentTime;
       const diff = Math.floor((end - startTime) / 1000);
@@ -356,9 +462,14 @@ export default function AdminPortal() {
             <section className="session-monitor-section">
                <div className="section-header-row">
                   <h2><Monitor size={22} color="#10b981" /> Session Monitor</h2>
-                  <button className="download-chat-btn" onClick={handleDownloadSessions} title="Download sessions as CSV">
-                     <Download size={16} /> Export Sessions
-                  </button>
+                  <div className="section-actions">
+                     <button className="download-chat-btn" onClick={handleDownloadSessions} title="Download sessions as CSV">
+                        <Download size={16} /> Export CSV
+                     </button>
+                     <button className="download-chat-btn comprehensive" onClick={handleExportAllHTML} title="Export all data and images in one HTML report">
+                        <Monitor size={16} /> Export All (HTML)
+                     </button>
+                  </div>
                   <div className="top-toggles">
                     <button className={sessionType === 'text' ? 'active tab-text' : 'tab-text'} onClick={() => setSessionType('text')}>TextChat DB</button>
                     <button className={sessionType === 'video' ? 'active tab-video' : 'tab-video'} onClick={() => setSessionType('video')}>VideoChat DB</button>
