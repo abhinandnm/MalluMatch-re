@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import socket from '../socket';
-import { Send, Lock, BellRing, Shield, AlertTriangle, Monitor, Users } from 'lucide-react';
+import { Send, Lock, BellRing, Shield, AlertTriangle, Monitor, Users, Download } from 'lucide-react';
 import './AdminPortal.css';
 
 export default function AdminPortal() {
@@ -21,6 +21,7 @@ export default function AdminPortal() {
    const [sessionType, setSessionType] = useState('video'); // 'video' or 'text'
    const [sessionView, setSessionView] = useState('active'); // 'active' or 'past'
    const [selectedRoomId, setSelectedRoomId] = useState(null);
+   const [realOnlineUsers, setRealOnlineUsers] = useState(0);
 
    const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -33,7 +34,7 @@ export default function AdminPortal() {
    }, []);
 
    useEffect(() => {
-      socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings, safetyViolations, activeRooms, pastSessions }) => {
+      socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings, safetyViolations, activeRooms, pastSessions, onlineUsers }) => {
          setIsAuth(true);
          setReports(reports);
          setLogs(liveLogs);
@@ -41,10 +42,17 @@ export default function AdminPortal() {
          setSafetyViolations(safetyViolations || []);
          setActiveRooms(activeRooms || []);
          setPastSessions(pastSessions || []);
+         if (typeof onlineUsers === 'number') {
+            setRealOnlineUsers(onlineUsers);
+         }
          if (userCountSettings) {
             setUserCountSettings(userCountSettings);
             setTempCustomCount(userCountSettings.customCount);
          }
+      });
+
+      socket.on('real_online_users', (count) => {
+         setRealOnlineUsers(count);
       });
 
       socket.on('new_report', (report) => {
@@ -92,6 +100,7 @@ export default function AdminPortal() {
          socket.off('update_safety_violations');
          socket.off('active_rooms_update');
          socket.off('past_sessions_update');
+         socket.off('real_online_users');
       };
    }, []);
 
@@ -138,6 +147,39 @@ export default function AdminPortal() {
 
    const handleTerminateRoom = (roomId) => {
       socket.emit('admin_terminate_room', { roomId });
+   };
+
+   const handleDownloadChat = () => {
+      if (logs.length === 0) return;
+      
+      // Define CSV headers
+      const headers = ['Time', 'Room', 'Sender', 'IP', 'Message'];
+      
+      // Convert logs to CSV rows
+      const csvRows = [
+         headers.join(','),
+         ...logs.map(l => [
+            `"${l.time || ''}"`,
+            `"${l.roomId || ''}"`,
+            `"${l.sender || ''}"`,
+            `"${l.ip || ''}"`,
+            `"${(l.text || '').replace(/"/g, '""')}"`
+         ].join(','))
+      ];
+      
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.href = url;
+      link.download = `mallumatch_chat_export_${timestamp}.csv`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
    };
 
    const formatDuration = (startTime, endTime) => {
@@ -193,7 +235,7 @@ export default function AdminPortal() {
             <div className="user-count-control">
                <h3>Live Stats</h3>
                <div className="stat-row">Active Rooms: <span>{activeRooms.length}</span></div>
-               <div className="stat-row">Online Users (Approx): <span>{activeRooms.length * 2 + Math.floor(Math.random() * 5)}</span></div>
+               <div className="stat-row">Online Users: <span>{realOnlineUsers}</span></div>
             </div>
 
             <form className="admin-form compact" onSubmit={handleBroadcast}>
@@ -390,7 +432,12 @@ export default function AdminPortal() {
             </section>
 
             <section className="logs-section">
-               <h2><Send size={22} color="#2563eb" /> Live Global Chat Feed</h2>
+               <div className="section-header-row">
+                  <h2><Send size={22} color="#2563eb" /> Live Global Chat Feed</h2>
+                  <button className="download-chat-btn" onClick={handleDownloadChat} title="Download chat logs as CSV">
+                     <Download size={16} /> Download CSV
+                  </button>
+               </div>
                <div className="logs-container">
                   {logs.map((l, i) => (
                      <div key={i} className="log-entry chat-feed-entry">

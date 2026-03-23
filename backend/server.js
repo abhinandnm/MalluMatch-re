@@ -97,7 +97,8 @@ setInterval(() => {
        userCountSettings,
        safetyViolations,
        activeRooms: Array.from(matchMaker.activeRooms.entries()),
-       pastSessions
+       pastSessions,
+       onlineUsers
     });
   }
 }, 60 * 60 * 1000);
@@ -462,6 +463,7 @@ const broadcastUserCount = () => {
     ? userCountSettings.customCount 
     : onlineUsers;
   io.emit('online_users', { count: displayCount });
+  io.to('admins').emit('real_online_users', onlineUsers);
 };
 
 io.on('connection', (socket) => {
@@ -585,7 +587,8 @@ io.on('connection', (socket) => {
         userCountSettings,
         safetyViolations,
         activeRooms: Array.from(matchMaker.activeRooms.entries()),
-        pastSessions
+        pastSessions,
+        onlineUsers
       });
     }
   });
