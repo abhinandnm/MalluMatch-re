@@ -22,7 +22,12 @@ const limiter = rateLimit({
 // Apply rate limiter to all API routes
 app.use('/api/', limiter);
 
-const frontendUrl = process.env.FRONTEND_URL || 'https://mallu-match.vercel.app';
+const allowedOrigins = [
+  'https://mallu-match.vercel.app',
+  'https://mallumatch.vercel.app',
+  'https://xentoolpdf.vercel.app'
+];
+const frontendUrl = allowedOrigins;
 
 app.use(cors({
   origin: frontendUrl,
