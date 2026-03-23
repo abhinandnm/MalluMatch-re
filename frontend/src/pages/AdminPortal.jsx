@@ -3,6 +3,17 @@ import socket from '../socket';
 import { Send, Lock, BellRing, Shield, AlertTriangle, Monitor, Users, Download } from 'lucide-react';
 import './AdminPortal.css';
 
+const escapeHTML = (str) => {
+  if (!str) return '';
+  return str.replace(/[&<>"']/g, (m) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[m]));
+};
+
 export default function AdminPortal() {
    const [password, setPassword] = useState('');
    const [isAuth, setIsAuth] = useState(false);
@@ -314,7 +325,7 @@ export default function AdminPortal() {
                     room.chatLogs.map(log => `
                      <div class="log-entry">
                         <span class="log-sender">[${log.sender.substring(0, 4)}]:</span>
-                        <span class="log-text">${log.text}</span>
+                        <span class="log-text">${escapeHTML(log.text)}</span>
                      </div>
                     `).join('')
                   }

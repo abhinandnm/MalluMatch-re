@@ -35,14 +35,18 @@ const pattern = allBadwords
 const filterRegex = new RegExp(`\\b(${pattern})\\b`, 'gi');
 
 /**
- * Filters abusive words from a message and replaces them with asterisks.
+ * Filters abusive words and strips HTML tags from a message.
  * @param {string} text - The original message
- * @returns {string} - The filtered message
+ * @returns {string} - The cleaned and sanitized message
  */
 function cleanMessage(text) {
   if (!text) return text;
   
-  return text.replace(filterRegex, (match) => {
+  // 1. Strip HTML tags to prevent XSS
+  const sanitized = text.replace(/<[^>]*>/g, '');
+  
+  // 2. Filter bad words
+  return sanitized.replace(filterRegex, (match) => {
     return '#'.repeat(match.length);
   });
 }

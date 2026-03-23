@@ -559,13 +559,10 @@ export default function ChatRoom() {
   const sendMessage = (e) => {
     e.preventDefault();
     if (inputMsg.trim() && isConnected) {
-      const sanitizedMsg = DOMPurify.sanitize(inputMsg);
-      if (!sanitizedMsg.trim()) return;
-
-      const filteredMsg = cleanMessage(sanitizedMsg);
+      const filteredMsg = cleanMessage(inputMsg);
       const msgObj = { sender: 'me', text: filteredMsg };
       setMessages((prev) => [...prev, msgObj]);
-      socket.emit('chat_message', sanitizedMsg);
+      socket.emit('chat_message', inputMsg);
       playSfx(receiveSound); // The single "bop"
       setInputMsg('');
     }
@@ -803,7 +800,7 @@ export default function ChatRoom() {
             <div className="status-msg">{status}</div>
             {messages.map((m, i) => (
               <div key={i} className={`message-bubble ${m.sender === 'me' ? 'me' : 'stranger'}`}>
-                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.text) }} />
+                <div>{m.text}</div>
               </div>
             ))}
           </div>
