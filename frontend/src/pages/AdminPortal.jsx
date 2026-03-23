@@ -226,6 +226,16 @@ export default function AdminPortal() {
       URL.revokeObjectURL(url);
    };
 
+   const handleDownloadImage = (src, filename) => {
+      if (!src) return;
+      const link = document.createElement('a');
+      link.href = src;
+      link.download = filename || `snapshot_${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+   };
+
    const formatDuration = (startTime, endTime) => {
       const end = endTime || currentTime;
       const diff = Math.floor((end - startTime) / 1000);
@@ -379,7 +389,17 @@ export default function AdminPortal() {
                               <span className="user-id">USER ID: {room.user1.substring(0, 4)}</span>
                               {sessionType === 'video' ? (
                                  room.snapshots?.[room.user1] ? (
-                                    <img src={room.snapshots[room.user1]} alt="User 1" />
+                                                                         <div className="snapshot-wrapper">
+                                        <img src={room.snapshots[room.user1]} alt="User 1" />
+                                        <button 
+                                           className="snap-download-btn" 
+                                           onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDownloadImage(room.snapshots[room.user1], `room_${room.id}_user_${room.user1}_${Date.now()}.png`);
+                                           }}
+                                           title="Download Snapshot"
+                                        ><Download size={14} /></button>
+                                     </div>
                                  ) : <div className="no-snapshot">Waiting 3s...</div>
                               ) : <div className="no-snapshot text-icon"><Users size={32} /></div>}
                            </div>
@@ -387,7 +407,17 @@ export default function AdminPortal() {
                               <span className="user-id">USER ID: {room.user2.substring(0, 4)}</span>
                               {sessionType === 'video' ? (
                                  room.snapshots?.[room.user2] ? (
-                                    <img src={room.snapshots[room.user2]} alt="User 2" />
+                                                                         <div className="snapshot-wrapper">
+                                        <img src={room.snapshots[room.user2]} alt="User 2" />
+                                        <button 
+                                           className="snap-download-btn" 
+                                           onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDownloadImage(room.snapshots[room.user2], `room_${room.id}_user_${room.user2}_${Date.now()}.png`);
+                                           }}
+                                           title="Download Snapshot"
+                                        ><Download size={14} /></button>
+                                     </div>
                                  ) : <div className="no-snapshot">Waiting 3s...</div>
                               ) : <div className="no-snapshot text-icon"><Users size={32} /></div>}
                            </div>
@@ -431,6 +461,11 @@ export default function AdminPortal() {
                         <div className="report-img safety-img">
                            <img src={v.evidence} alt="Evidence" />
                            <div className="safety-tag">{v.reason}</div>
+                           <button 
+                              className="snap-download-btn overlay" 
+                              onClick={() => handleDownloadImage(v.evidence, `safety_violation_${v.userId}_${Date.now()}.png`)}
+                              title="Download Evidence"
+                           ><Download size={18} /></button>
                         </div>
                         <div className="report-info">
                            <div className="report-meta">
@@ -456,7 +491,14 @@ export default function AdminPortal() {
                      <div key={r.id} className="report-card">
                         <div className="report-img">
                            {r.screenshot ? (
-                              <img src={r.screenshot} alt="Evidence" />
+                              <div className="snapshot-wrapper full-height">
+                                 <img src={r.screenshot} alt="Evidence" />
+                                 <button 
+                                    className="snap-download-btn overlay" 
+                                    onClick={() => handleDownloadImage(r.screenshot, `user_report_offender_${r.offenderId}_${Date.now()}.png`)}
+                                    title="Download Evidence"
+                                 ><Download size={18} /></button>
+                              </div>
                            ) : (
                               <div className="no-evidence">Text Chat Report<br /><span>(No Video)</span></div>
                            )}
