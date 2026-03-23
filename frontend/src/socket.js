@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://13.60.217.184:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://mallumatch-chat.duckdns.org';
 const socket = io(SOCKET_URL, {
   autoConnect: true,
   reconnection: true,
