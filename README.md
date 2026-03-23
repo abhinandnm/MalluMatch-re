@@ -34,10 +34,10 @@ A fully functional, Omegle-style random video and text chat platform. Built usin
 
 ## Deployment to Production
 
-### 1. Backend Deployment (Render, DigitalOcean, or AWS)
-- Deploy the `backend` folder as a Node Web Service on a platform like Render or DigitalOcean App Platform.
-- Ensure the startup command is `node server.js`.
-- Provide the necessary environment variables (`PORT=5000`, `NODE_ENV=production`).
+### 1. Backend Deployment (AWS EC2)
+- Deploy the `backend` folder to an **AWS EC2 instance**.
+- This project uses **PM2** for process management and **GitHub Actions** for automated deployment.
+- Ensure the server is listening on port `5000` and ports `80`/`443` are open in your AWS Security Group.
 
 ### 2. Frontend Deployment (Vercel, Netlify, AWS S3)
 - Navigate to the `frontend` folder and run `npm run build`.
