@@ -5,6 +5,9 @@ export default function Footer() {
     <footer>
       <p>&copy; {new Date().getFullYear()} MalluMatch. All rights reserved.</p>
       <p className="developed-by">Developed by Nexa Labs</p>
+      <p style={{ fontSize: '0.8rem', color: '#a0a0a0', marginTop: '-0.5rem', marginBottom: '1rem' }}>
+        <a href="mailto:mallumatch.auth@gmail.com" style={{ color: '#a0a0a0', textDecoration: 'none' }}>mallumatch.auth@gmail.com</a>
+      </p>
       <div className="footer-links">
         <Link to="/about">About Us</Link>
         <Link to="/privacy">Privacy Policy</Link>

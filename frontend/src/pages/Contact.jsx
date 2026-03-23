@@ -19,6 +19,12 @@ export default function Contact() {
         </div>
         <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem' }}>Send Message</button>
       </form>
+      <div style={{ marginTop: '2rem', padding: '1.5rem', borderTop: '1px solid #eee', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.1rem', color: '#333', marginBottom: '0.5rem' }}>Direct Contact</h3>
+        <p style={{ color: '#666', margin: 0 }}>
+          Email: <a href="mailto:mallumatch.auth@gmail.com" style={{ color: '#007bff', textDecoration: 'none', fontWeight: '500' }}>mallumatch.auth@gmail.com</a>
+        </p>
+      </div>
       <div style={{ textAlign: 'center', marginTop: '2rem' }}>
          <Link to="/" style={{ color: '#666', textDecoration: 'none' }}>Back to Home</Link>
       </div>
