@@ -4,7 +4,6 @@ import socket from '../socket';
 import * as nsfwjs from 'nsfwjs';
 import * as tf from '@tensorflow/tfjs';
 import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info, Wand2, AlertTriangle } from 'lucide-react';
-import DOMPurify from 'dompurify';
 import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
 import { cleanMessage } from '../utils/filter';

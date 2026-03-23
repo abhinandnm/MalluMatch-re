@@ -57,6 +57,8 @@ const pastSessions = []; // Past 24 hours sessions
 const safetyViolations = [];
 const userStrikes = new Map(); // IP -> count
 const lastMessageTime = new Map(); // socketId -> timestamp
+const lastMessages = new Map(); // socketId -> lastMessageText
+const spamStrikes = new Map(); // socketId -> strikeCount
 
 const chatLogsPath = path.join(__dirname, 'chat_logs.json');
 let liveLogs = []; // Feed of all text messages
@@ -542,11 +544,40 @@ io.on('connection', (socket) => {
     if (now - lastTime < 1000) {
       console.warn(`Spam detected from ${socket.id}`);
       socket.emit('error', { message: 'You are sending messages too fast. Slow down!' });
-      // Optional: Disconnect if they keep spamming
-      // socket.disconnect(); 
+      
+      // Increment strikes
+      const strikes = (spamStrikes.get(socket.id) || 0) + 1;
+      spamStrikes.set(socket.id, strikes);
+      
+      if (strikes >= 5) {
+        socket.emit('error', { message: 'You have been kicked for spamming.' });
+        socket.disconnect();
+      }
       return;
     }
     lastMessageTime.set(socket.id, now);
+    
+    // 3. Duplicate Message Detection
+    const lastMsg = lastMessages.get(socket.id);
+    if (msg === lastMsg) {
+      console.warn(`Duplicate message from ${socket.id}`);
+      socket.emit('error', { message: 'Please do not send the same message twice.' });
+      return;
+    }
+    lastMessages.set(socket.id, msg);
+
+    // 4. Repetitive Character Detection (e.g., "aaaaaaaaa")
+    // If any character repeats more than 15 times
+    if (/(.)\1{14,}/.test(msg)) {
+      console.warn(`Repetitive characters from ${socket.id}`);
+      socket.emit('error', { message: 'Your message contains too many repetitive characters.' });
+      return;
+    }
+    
+    // 5. Strike System for Spamming
+    // (Punishment logic already handled above in early returns if we wanted to be strict)
+    // Let's reset strikes if they managed to send a good message
+    spamStrikes.set(socket.id, 0);
 
     const roomId = matchMaker.userRooms.get(socket.id);
     if (roomId) {
@@ -754,6 +785,11 @@ io.on('connection', (socket) => {
     onlineUsers--;
     broadcastUserCount();
     matchMaker.handleDisconnect(socket);
+    
+    // Cleanup spam tracking
+    lastMessageTime.delete(socket.id);
+    lastMessages.delete(socket.id);
+    spamStrikes.delete(socket.id);
   });
 });
 
