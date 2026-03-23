@@ -3,19 +3,37 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const { cleanMessage } = require('./filter');
 
 const app = express();
-app.use(cors());
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes' }
+});
+
+// Apply rate limiter to all API routes
+app.use('/api/', limiter);
+
+const frontendUrl = process.env.FRONTEND_URL || 'https://mallu-match.vercel.app';
+
+app.use(cors({
+  origin: frontendUrl,
+  methods: ['GET', 'POST']
+}));
 app.use(express.json()); // Allow parsing JSON bodies
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: frontendUrl,
     methods: ['GET', 'POST']
   },
   connectionStateRecovery: {
@@ -33,6 +51,7 @@ const reports = [];
 const pastSessions = []; // Past 12 hours sessions
 const safetyViolations = [];
 const userStrikes = new Map(); // IP -> count
+const lastMessageTime = new Map(); // socketId -> timestamp
 
 const chatLogsPath = path.join(__dirname, 'chat_logs.json');
 let liveLogs = []; // Feed of all text messages
@@ -491,6 +510,25 @@ io.on('connection', (socket) => {
   
   // Text Chat messages + Live Logging
   socket.on('chat_message', (msg) => {
+    // 1. Basic Validation
+    if (typeof msg !== 'string' || msg.trim().length === 0 || msg.length > 1000) {
+      console.warn(`Invalid message from ${socket.id}:`, msg);
+      socket.emit('error', { message: 'Invalid message format or length.' });
+      return;
+    }
+
+    // 2. Anti-Spam / Rate Limiting (1 message per second)
+    const now = Date.now();
+    const lastTime = lastMessageTime.get(socket.id) || 0;
+    if (now - lastTime < 1000) {
+      console.warn(`Spam detected from ${socket.id}`);
+      socket.emit('error', { message: 'You are sending messages too fast. Slow down!' });
+      // Optional: Disconnect if they keep spamming
+      // socket.disconnect(); 
+      return;
+    }
+    lastMessageTime.set(socket.id, now);
+
     const roomId = matchMaker.userRooms.get(socket.id);
     if (roomId) {
       const cleanedMsg = cleanMessage(msg);

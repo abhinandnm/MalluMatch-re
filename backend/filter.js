@@ -43,7 +43,7 @@ function cleanMessage(text) {
   if (!text) return text;
   
   return text.replace(filterRegex, (match) => {
-    return '*'.repeat(match.length);
+    return '#'.repeat(match.length);
   });
 }
 

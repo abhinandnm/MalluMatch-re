@@ -4,6 +4,7 @@ import socket from '../socket';
 import * as nsfwjs from 'nsfwjs';
 import * as tf from '@tensorflow/tfjs';
 import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info, Wand2, AlertTriangle } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
 import './ChatRoom.css';
@@ -557,9 +558,12 @@ export default function ChatRoom() {
   const sendMessage = (e) => {
     e.preventDefault();
     if (inputMsg.trim() && isConnected) {
-      const msgObj = { sender: 'me', text: inputMsg };
+      const sanitizedMsg = DOMPurify.sanitize(inputMsg);
+      if (!sanitizedMsg.trim()) return;
+
+      const msgObj = { sender: 'me', text: sanitizedMsg };
       setMessages((prev) => [...prev, msgObj]);
-      socket.emit('chat_message', inputMsg);
+      socket.emit('chat_message', sanitizedMsg);
       playSfx(receiveSound); // The single "bop"
       setInputMsg('');
     }
@@ -797,7 +801,7 @@ export default function ChatRoom() {
             <div className="status-msg">{status}</div>
             {messages.map((m, i) => (
               <div key={i} className={`message-bubble ${m.sender === 'me' ? 'me' : 'stranger'}`}>
-                {m.text}
+                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.text) }} />
               </div>
             ))}
           </div>
