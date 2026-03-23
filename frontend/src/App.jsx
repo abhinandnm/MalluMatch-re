@@ -61,7 +61,7 @@ const AppWrapper = () => {
 const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement }) => {
   const location = useLocation();
   const isChatPage = location.pathname === '/chat';
-  const isAdminPage = location.pathname === '/admin-portal';
+  const isAdminPage = location.pathname.startsWith('/admin-portal');
 
   return (
     <div className={`app-container ${(!ageVerified && !isAdminPage) ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>

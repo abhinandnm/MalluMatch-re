@@ -6,6 +6,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const { cleanMessage } = require('./filter');
 
 const app = express();
 app.use(cors());
@@ -492,11 +493,12 @@ io.on('connection', (socket) => {
   socket.on('chat_message', (msg) => {
     const roomId = matchMaker.userRooms.get(socket.id);
     if (roomId) {
+      const cleanedMsg = cleanMessage(msg);
       const logEntry = { 
         roomId, 
         sender: socket.id, 
         ip: matchMaker.userIPs.get(socket.id),
-        text: msg, 
+        text: cleanedMsg, 
         time: new Date().toLocaleTimeString(),
         timestamp: Date.now()
       };
@@ -511,7 +513,7 @@ io.on('connection', (socket) => {
       }
 
       // Send to partner
-      socket.to(roomId).emit('chat_message', { sender: 'stranger', text: msg });
+      socket.to(roomId).emit('chat_message', { sender: 'stranger', text: cleanedMsg });
 
       // Send to all admins
       io.to('admins').emit('live_chat_log', logEntry);
