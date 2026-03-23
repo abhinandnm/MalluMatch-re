@@ -22,4 +22,4 @@ jobs:
         script: |
           # Run the deploy script located in the repository
           # Assumes the repo is already cloned on the EC2 instance
-          cd /home/ubuntu/MalluMatch/backend && bash deploy.sh
+          cd /home/ubuntu/MalluMatch-re/backend && bash deploy.sh

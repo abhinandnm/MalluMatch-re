@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Configuration
-# By default, we'll assume the app is in /home/ubuntu/MalluMatch/backend
-APP_DIR="$HOME/MalluMatch/backend"
+# By default, we'll assume the app is in /home/ubuntu/MalluMatch-re/backend
+APP_DIR="$HOME/MalluMatch-re/backend"
 
 echo "Starting deployment..."
 
@@ -15,7 +15,8 @@ fi
 cd $APP_DIR
 
 # Pull latest changes
-git pull origin main
+git fetch origin main
+git reset --hard origin/main
 
 # Install dependencies
 npm install --production
