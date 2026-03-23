@@ -7,6 +7,7 @@ import { Send, UserX, UserSearch, LogOut, Shield, MessageSquare, Info, Wand2, Al
 import DOMPurify from 'dompurify';
 import AdBanner from '../components/AdBanner';
 import ConnectionAura from '../components/ConnectionAura';
+import { cleanMessage } from '../utils/filter';
 import './ChatRoom.css';
 
 // 🌍 Tip: Use a service like Metered.ca (Free) to get your TURN server credentials.
@@ -561,7 +562,8 @@ export default function ChatRoom() {
       const sanitizedMsg = DOMPurify.sanitize(inputMsg);
       if (!sanitizedMsg.trim()) return;
 
-      const msgObj = { sender: 'me', text: sanitizedMsg };
+      const filteredMsg = cleanMessage(sanitizedMsg);
+      const msgObj = { sender: 'me', text: filteredMsg };
       setMessages((prev) => [...prev, msgObj]);
       socket.emit('chat_message', sanitizedMsg);
       playSfx(receiveSound); // The single "bop"
