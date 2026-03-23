@@ -67,6 +67,8 @@ export default function ChatRoom() {
   const [remoteStream, setRemoteStream] = useState(null);
   const [safetyViolation, setSafetyViolation] = useState(false);
   const [modelLoading, setModelLoading] = useState(false);
+  const [isStrangerTyping, setIsStrangerTyping] = useState(false);
+  const typingTimeoutRef = useRef(null);
   const nsfwModelRef = useRef(null);
   const checkIntervalRef = useRef(null);
   
@@ -388,7 +390,16 @@ export default function ChatRoom() {
           playSfx(receiveSound);
           // Automatically open chat panel when stranger sends a message
           setShowChat(true);
+          setIsStrangerTyping(false); // Stop typing indicator when message received
         }
+      });
+
+      socket.on('stranger_typing', () => {
+        setIsStrangerTyping(true);
+      });
+
+      socket.on('stranger_stop_typing', () => {
+        setIsStrangerTyping(false);
       });
 
       socket.on('kicked', ({ message }) => {
@@ -424,6 +435,8 @@ export default function ChatRoom() {
       socket.off('webrtc_answer');
       socket.off('webrtc_ice_candidate');
       socket.off('chat_message');
+      socket.off('stranger_typing');
+      socket.off('stranger_stop_typing');
       socket.off('kicked');
       socket.off('banned');
       if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
@@ -516,6 +529,7 @@ export default function ChatRoom() {
     setMessages([]);
     setSharedInterests([]);
     setStrangerInterests([]);
+    setIsStrangerTyping(false);
     cleanupPeerConnection();
     socket.emit('next_stranger', { type: chatType, interests: userInterests });
   };
@@ -525,6 +539,7 @@ export default function ChatRoom() {
     setIsConnected(false);
     isConnectedRef.current = false;
     setSharedInterests([]);
+    setIsStrangerTyping(false);
     setStatus('You have disconnected.');
   };
 
@@ -562,8 +577,23 @@ export default function ChatRoom() {
       const msgObj = { sender: 'me', text: filteredMsg };
       setMessages((prev) => [...prev, msgObj]);
       socket.emit('chat_message', inputMsg);
+      socket.emit('stop_typing');
       playSfx(receiveSound); // The single "bop"
       setInputMsg('');
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setInputMsg(e.target.value);
+    
+    if (isConnected) {
+      socket.emit('typing');
+      
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit('stop_typing');
+      }, 3000);
     }
   };
 
@@ -802,13 +832,22 @@ export default function ChatRoom() {
                 <div>{m.text}</div>
               </div>
             ))}
+            {isStrangerTyping && (
+              <div className="message-bubble stranger typing-indicator">
+                <div className="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            )}
           </div>
           <div className="chat-footer">
             <input 
               type="text" 
               placeholder="Type message..." 
               value={inputMsg}
-              onChange={(e) => setInputMsg(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
             />
             <button onClick={(e) => sendMessage(e)} disabled={!isConnected || !inputMsg.trim()}>

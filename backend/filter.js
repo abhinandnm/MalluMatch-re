@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const sanitizeHtml = require('sanitize-html');
 
 const badwordsPath = path.join(__dirname, 'badwords.json');
 let badwords = { en: [], ml: [] };
@@ -23,15 +24,11 @@ function escapeRegExp(string) {
 
 /**
  * Creates a regular expression that matches any of the bad words.
- * Uses word boundaries \b to avoid matching sub-strings (e.g., "assessment" shouldn't match "ass").
- * Note: Malayalam doesn't always have clear word boundaries like English, 
- * so we handle it by joining with | and using a case-insensitive match.
  */
 const pattern = allBadwords
   .map(word => escapeRegExp(word))
   .join('|');
 
-// Combine English (with word boundaries) and Malayalam (if needed, although \b works for many scripts)
 const filterRegex = new RegExp(`\\b(${pattern})\\b`, 'gi');
 
 /**
@@ -42,8 +39,12 @@ const filterRegex = new RegExp(`\\b(${pattern})\\b`, 'gi');
 function cleanMessage(text) {
   if (!text) return text;
   
-  // 1. Strip HTML tags to prevent XSS
-  const sanitized = text.replace(/<[^>]*>/g, '');
+  // 1. Sanitize HTML to prevent XSS (Allow NO tags)
+  const sanitized = sanitizeHtml(text, {
+    allowedTags: [],
+    allowedAttributes: {},
+    disallowedTagsMode: 'recursiveEscape'
+  });
   
   // 2. Filter bad words
   return sanitized.replace(filterRegex, (match) => {
