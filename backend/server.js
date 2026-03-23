@@ -3,13 +3,30 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
 const { cleanMessage } = require('./filter');
+const { isMalicious } = require('./utils/security');
+const bcrypt = require('bcryptjs');
 
 const app = express();
+
+// Use Helmet for security headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // Allow CDN for nsfwjs if needed
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https://*"],
+      connectSrc: ["'self'", "wss:", "https://*"], // For socket.io and APIs
+    },
+  },
+}));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -59,6 +76,8 @@ const userStrikes = new Map(); // IP -> count
 const lastMessageTime = new Map(); // socketId -> timestamp
 const lastMessages = new Map(); // socketId -> lastMessageText
 const spamStrikes = new Map(); // socketId -> strikeCount
+const ipConnections = new Map(); // IP -> count
+const tempBans = new Map(); // IP -> expiryTime
 
 const chatLogsPath = path.join(__dirname, 'chat_logs.json');
 let liveLogs = []; // Feed of all text messages
@@ -117,209 +136,28 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
-class MatchMaker {
-  constructor() {
-    this.videoQueue = [];
-    this.textQueue = [];
-    this.activeRooms = new Map(); // roomId -> { user1, user2, type }
-    this.userRooms = new Map(); // socketId -> roomId
-    this.userIPs = new Map(); // socketId -> IP
-    this.pendingDisconnections = new Map(); // socketId -> timeoutId
-  }
+// Inactivity cleanup every 30 seconds
+setInterval(() => {
+  const now = Date.now();
+  const inactivityLimit = 3 * 60 * 1000; // 3 minutes of total silence
 
-  addUser(socket, type, interests = []) {
-    const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
-    if (bannedIPs.has(ip)) {
-      socket.emit('banned', { message: 'Your IP is banned for violating community guidelines.' });
-      socket.disconnect();
-      return;
-    }
-    this.userIPs.set(socket.id, ip);
-    // If user is already in a queue, remove them first
-    this.removeUserFromQueues(socket.id);
-    
-    const normalizedInterests = Array.isArray(interests) 
-      ? interests.map(i => String(i).trim().toLowerCase()).filter(i => i)
-      : [];
-    
-    socket.userInterests = normalizedInterests;
-    
-    const queue = type === 'video' ? this.videoQueue : this.textQueue;
-    
-    let partnerIndex = -1;
-    let fallbackIndex = -1;
+  for (const [roomId, room] of matchMaker.activeRooms.entries()) {
+    if (now - room.lastActivity > inactivityLimit) {
+      console.log(`Room ${roomId} terminated due to inactivity.`);
+      
+      const user1 = io.sockets.sockets.get(room.user1);
+      const user2 = io.sockets.sockets.get(room.user2);
 
-    for (let i = 0; i < queue.length; i++) {
-        const p = queue[i];
-        const pInterests = p.userInterests || [];
-        
-        const shared = socket.userInterests.filter(int => pInterests.includes(int));
-        
-        if (shared.length > 0) {
-            // Priority 1: Direct shared interest match
-            partnerIndex = i;
-            break; // Found the best possible match
-        } else if (fallbackIndex === -1 && (socket.userInterests.length === 0 || pInterests.length === 0)) {
-            // Priority 2: One side is "open" - save as fallback
-            fallbackIndex = i;
-        }
-    }
+      if (user1) user1.emit('error', { message: 'Chat ended due to inactivity.' });
+      if (user2) user2.emit('error', { message: 'Chat ended due to inactivity.' });
 
-    // If no direct match was found, use the first available fallback
-    if (partnerIndex === -1) {
-        partnerIndex = fallbackIndex;
-    }
-
-    if (partnerIndex !== -1) {
-      // Find a match
-      const partner = queue.splice(partnerIndex, 1)[0];
-      const roomId = `room_${partner.id}_${socket.id}`;
-      
-      const sharedInterests = socket.userInterests.filter(int => (partner.userInterests || []).includes(int));
-      let matchMsg = 'You are now chatting with a random stranger.';
-      if (sharedInterests.length > 0) {
-          matchMsg = `You both like ${sharedInterests.join(', ')}. Respect each other and have fun.`;
-      }
-      
-      // Setup room
-      partner.join(roomId);
-      socket.join(roomId);
-      
-      this.activeRooms.set(roomId, { 
-        user1: partner.id, 
-        user2: socket.id, 
-        type,
-        startTime: Date.now(),
-        chatLogs: [],
-        snapshots: {}
-      });
-      this.userRooms.set(partner.id, roomId);
-      this.userRooms.set(socket.id, roomId);
-      
-      io.to('admins').emit('active_rooms_update', Array.from(this.activeRooms.entries()));
-      
-      // Notify both that a match is found with asymmetric interest info
-      partner.emit('match_found', { 
-        roomId, 
-        type, 
-        message: matchMsg,
-        commonInterests: sharedInterests,
-        strangerInterests: socket.userInterests
-      });
-      
-      socket.emit('match_found', { 
-        roomId, 
-        type, 
-        message: matchMsg,
-        commonInterests: sharedInterests,
-        strangerInterests: partner.userInterests
-      });
-      
-      // For WebRTC video chat, assign one as the initiator (polite/impolite pattern)
-      if (type === 'video') {
-         io.to(partner.id).emit('initiate_webrtc');
-      }
-    } else {
-      // Add to queue
-      queue.push(socket);
+      matchMaker.terminateRoom(room.user1, roomId);
     }
   }
+}, 30 * 1000);
 
-  removeUserFromQueues(socketId) {
-    this.videoQueue = this.videoQueue.filter(s => s.id !== socketId);
-    this.textQueue = this.textQueue.filter(s => s.id !== socketId);
-  }
-
-  handleDisconnect(socket, force = false) {
-    // 1. Remove from queues
-    this.removeUserFromQueues(socket.id);
-    
-    // 2. Handle room cleanup
-    const roomId = this.userRooms.get(socket.id);
-    if (!roomId) return;
-
-    if (force) {
-      // Clear any pending timeout
-      const existingTimeout = this.pendingDisconnections.get(socket.id);
-      if (existingTimeout) {
-        clearTimeout(existingTimeout);
-        this.pendingDisconnections.delete(socket.id);
-      }
-      this.terminateRoom(socket.id, roomId);
-      return;
-    }
-
-    // Accidental disconnect - start grace period
-    if (this.pendingDisconnections.has(socket.id)) return;
-
-    const room = this.activeRooms.get(roomId);
-    if (room) {
-      const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-      
-      // Notify partner that stranger is reconnecting
-      io.to(partnerId).emit('stranger_reconnecting', { message: 'Stranger connection lost. Waiting for reconnection...' });
-
-      // Start grace period timeout
-      const timeoutId = setTimeout(() => {
-        this.terminateRoom(socket.id, roomId);
-      }, 60000); // 60 seconds grace period
-
-      this.pendingDisconnections.set(socket.id, timeoutId);
-    }
-  }
-
-  terminateRoom(socketId, roomId) {
-    const room = this.activeRooms.get(roomId);
-    if (!room) return;
-
-    const partnerId = room.user1 === socketId ? room.user2 : room.user1;
-    io.to(partnerId).emit('stranger_disconnected', { message: 'Stranger has left the chat.' });
-
-    // Remove room metadata
-    room.endTime = Date.now();
-    pastSessions.unshift({ roomId, ...room });
-    if (pastSessions.length > 500) pastSessions.length = 500;
-
-    this.activeRooms.delete(roomId);
-    this.userRooms.delete(partnerId);
-    this.userRooms.delete(socketId);
-    this.pendingDisconnections.delete(socketId);
-
-    io.to('admins').emit('active_rooms_update', Array.from(this.activeRooms.entries()));
-    io.to('admins').emit('past_sessions_update', pastSessions);
-
-    const partnerSocket = io.sockets.sockets.get(partnerId);
-    if (partnerSocket) {
-      partnerSocket.leave(roomId);
-    }
-  }
-
-  handleReconnect(socket) {
-    // Clear any pending disconnection timeout
-    const timeoutId = this.pendingDisconnections.get(socket.id);
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-      this.pendingDisconnections.delete(socket.id);
-      
-      const roomId = this.userRooms.get(socket.id);
-      if (roomId) {
-        const room = this.activeRooms.get(roomId);
-        if (room) {
-          const partnerId = room.user1 === socket.id ? room.user2 : room.user1;
-          io.to(partnerId).emit('stranger_reconnected', { message: 'Stranger is back!' });
-        }
-      }
-    }
-  }
-
-  next(socket, type, interests = []) {
-    // Treat as a FORCE disconnect from current chat, then re-enter queue
-    this.handleDisconnect(socket, true);
-    this.addUser(socket, type, interests);
-  }
-}
-
-const matchMaker = new MatchMaker();
+const MatchMaker = require('./services/matchMaker');
+const matchMaker = new MatchMaker(io, bannedIPs, pastSessions);
 
 let onlineUsers = 0;
 
@@ -439,9 +277,11 @@ app.post('/api/verify-otp', (req, res) => {
   }
 
   // Success: Create User
+  const salt = bcrypt.genSaltSync(10);
+  const hashedPassword = bcrypt.hashSync(pending.password, salt);
   const newUser = { 
     username: pending.username, 
-    password: pending.password, 
+    password: hashedPassword, 
     email: email 
   };
   users.push(newUser);
@@ -453,8 +293,8 @@ app.post('/api/verify-otp', (req, res) => {
 
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  const user = users.find(u => u.username === username && u.password === password);
-  if (user) {
+  const user = users.find(u => u.username === username);
+  if (user && bcrypt.compareSync(password, user.password)) {
     res.json({ success: true, token: 'demo-token-' + Date.now(), username });
   } else {
     res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -481,6 +321,26 @@ const broadcastUserCount = () => {
 };
 
 io.on('connection', (socket) => {
+  const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+
+  // Check for temporary bans
+  const banExpiry = tempBans.get(ip);
+  if (banExpiry && Date.now() < banExpiry) {
+    socket.emit('error', { message: `Your IP is temporarily banned until ${new Date(banExpiry).toLocaleTimeString()}.` });
+    socket.disconnect();
+    return;
+  }
+
+  const currentIpConnections = ipConnections.get(ip) || 0;
+
+  if (currentIpConnections >= 5) { // Limit to 5 connections per IP
+    socket.emit('error', { message: 'Too many connections from this IP.' });
+    socket.disconnect();
+    return;
+  }
+
+  ipConnections.set(ip, currentIpConnections + 1);
+
   if (socket.recovered) {
     // Connection state was recovered
     matchMaker.handleReconnect(socket);
@@ -535,6 +395,22 @@ io.on('connection', (socket) => {
     if (typeof msg !== 'string' || msg.trim().length === 0 || msg.length > 1000) {
       console.warn(`Invalid message from ${socket.id}:`, msg);
       socket.emit('error', { message: 'Invalid message format or length.' });
+      return;
+    }
+
+    // 1.5 Malicious Pattern Detection
+    const ip = matchMaker.userIPs.get(socket.id);
+    if (isMalicious(msg)) {
+      console.warn(`Malicious pattern detected from ${socket.id} (${ip})`);
+      const expiry = Date.now() + 30 * 60 * 1000; // 30 minutes ban
+      if (ip) tempBans.set(ip, expiry);
+      
+      socket.emit('error', { message: 'Malicious activity detected. You are temporarily banned.' });
+      
+      // Log suspicious activity
+      console.log(`[SECURITY ALERT] IP ${ip} temporary banned for malicious pattern: ${msg}`);
+      
+      setTimeout(() => socket.disconnect(), 500);
       return;
     }
 
@@ -595,6 +471,7 @@ io.on('connection', (socket) => {
 
       const room = matchMaker.activeRooms.get(roomId);
       if (room) {
+        room.lastActivity = Date.now();
         room.chatLogs.push(logEntry);
         // Optimize: could emit a specific event, but active_rooms_update works for full state
         io.to('admins').emit('active_rooms_update', Array.from(matchMaker.activeRooms.entries()));
@@ -621,7 +498,7 @@ io.on('connection', (socket) => {
 
   // Admin Actions
   socket.on('admin_auth', ({ password }) => {
-    if (password === 'ccyr0149') {
+    if (password === process.env.ADMIN_PASSWORD) {
       socket.join('admins');
       socket.emit('admin_auth_success', { 
         reports, 
@@ -654,7 +531,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('admin_handle_safety_violation', ({ violationId, action, password }) => {
-    if (password !== 'ccyr0149') return;
+    if (password !== process.env.ADMIN_PASSWORD) return;
 
     const index = safetyViolations.findIndex(v => v.id === violationId);
     if (index === -1) return;
@@ -679,7 +556,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('admin_update_user_count', ({ settings, password }) => {
-    if (password === 'ccyr0149') {
+    if (password === process.env.ADMIN_PASSWORD) {
       userCountSettings = { ...userCountSettings, ...settings };
       saveSettings();
       broadcastUserCount();
@@ -689,7 +566,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('admin_broadcast', ({ message, password }) => {
-    if (password === 'ccyr0149') {
+    if (password === process.env.ADMIN_PASSWORD) {
       currentAnnouncement = message;
       saveSettings();
       io.emit('global_announcement', { message });
@@ -782,6 +659,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+    const currentIpConnections = ipConnections.get(ip) || 0;
+    if (currentIpConnections > 0) {
+      ipConnections.set(ip, currentIpConnections - 1);
+    } else {
+      ipConnections.delete(ip);
+    }
+
     onlineUsers--;
     broadcastUserCount();
     matchMaker.handleDisconnect(socket);
@@ -790,6 +675,21 @@ io.on('connection', (socket) => {
     lastMessageTime.delete(socket.id);
     lastMessages.delete(socket.id);
     spamStrikes.delete(socket.id);
+  });
+
+  // Typing indication
+  socket.on('typing', () => {
+    const roomId = matchMaker.userRooms.get(socket.id);
+    if (roomId) {
+      socket.to(roomId).emit('stranger_typing');
+    }
+  });
+
+  socket.on('stop_typing', () => {
+    const roomId = matchMaker.userRooms.get(socket.id);
+    if (roomId) {
+      socket.to(roomId).emit('stranger_stop_typing');
+    }
   });
 });
 
