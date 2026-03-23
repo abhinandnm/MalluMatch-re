@@ -26,6 +26,8 @@ export default function AdminPortal() {
    const [currentTime, setCurrentTime] = useState(Date.now());
 
    const logEndRef = useRef(null);
+   const logContainerRef = useRef(null);
+   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
    const alertSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
 
    useEffect(() => {
@@ -105,8 +107,10 @@ export default function AdminPortal() {
    }, []);
 
    useEffect(() => {
-      logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-   }, [logs]);
+      if (shouldAutoScroll) {
+         logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+   }, [logs, shouldAutoScroll]);
 
    const handleLogin = (e) => {
       e.preventDefault();
@@ -638,7 +642,17 @@ export default function AdminPortal() {
                      <Download size={16} /> Download CSV
                   </button>
                </div>
-               <div className="logs-container">
+               <div 
+                  className="logs-container" 
+                  ref={logContainerRef}
+                  onScroll={() => {
+                     const container = logContainerRef.current;
+                     if (container) {
+                        const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+                        setShouldAutoScroll(isAtBottom);
+                     }
+                  }}
+               >
                   {logs.map((l, i) => (
                      <div key={i} className="log-entry chat-feed-entry">
                         <div className="log-main">
