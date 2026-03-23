@@ -182,6 +182,50 @@ export default function AdminPortal() {
       URL.revokeObjectURL(url);
    };
 
+   const handleDownloadSessions = () => {
+      if (displayRooms.length === 0) return;
+      
+      const headers = ['Room ID', 'Type', 'Status', 'Start Time', 'End Time', 'Duration', 'User 1 ID', 'User 2 ID', 'Messages'];
+      
+      const csvRows = [
+         headers.join(','),
+         ...displayRooms.map(room => {
+            const status = sessionView === 'active' ? 'Active' : 'Ended';
+            const duration = formatDuration(room.startTime, room.endTime);
+            const startTime = new Date(room.startTime).toLocaleString();
+            const endTime = room.endTime ? new Date(room.endTime).toLocaleString() : 'N/A';
+            const msgCount = room.chatLogs?.length || 0;
+            
+            return [
+               `"${room.id || ''}"`,
+               `"${room.type || ''}"`,
+               `"${status}"`,
+               `"${startTime}"`,
+               `"${endTime}"`,
+               `"${duration}"`,
+               `"${room.user1 || ''}"`,
+               `"${room.user2 || ''}"`,
+               `"${msgCount}"`
+            ].join(',');
+         })
+      ];
+      
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filenamePrefix = sessionView === 'active' ? 'active_rooms' : 'past_sessions';
+      link.href = url;
+      link.download = `mallumatch_${filenamePrefix}_${timestamp}.csv`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+   };
+
    const formatDuration = (startTime, endTime) => {
       const end = endTime || currentTime;
       const diff = Math.floor((end - startTime) / 1000);
@@ -301,8 +345,11 @@ export default function AdminPortal() {
             {/* Session Monitor DB Section */}
             <section className="session-monitor-section">
                <div className="section-header-row">
-                 <h2><Monitor size={22} color="#10b981" /> Session Monitor</h2>
-                 <div className="top-toggles">
+                  <h2><Monitor size={22} color="#10b981" /> Session Monitor</h2>
+                  <button className="download-chat-btn" onClick={handleDownloadSessions} title="Download sessions as CSV">
+                     <Download size={16} /> Export Sessions
+                  </button>
+                  <div className="top-toggles">
                     <button className={sessionType === 'text' ? 'active tab-text' : 'tab-text'} onClick={() => setSessionType('text')}>TextChat DB</button>
                     <button className={sessionType === 'video' ? 'active tab-video' : 'tab-video'} onClick={() => setSessionType('video')}>VideoChat DB</button>
                  </div>
@@ -311,7 +358,7 @@ export default function AdminPortal() {
                <div className="sub-header-row">
                  <div className="sub-toggles">
                     <button className={sessionView === 'active' ? 'active' : ''} onClick={() => setSessionView('active')}>Live Active Rooms</button>
-                    <button className={sessionView === 'past' ? 'active' : ''} onClick={() => setSessionView('past')}>Past 12 Hours</button>
+                    <button className={sessionView === 'past' ? 'active' : ''} onClick={() => setSessionView('past')}>Past 24 Hours</button>
                  </div>
                  <div className="stats-info">Showing {displayRooms.length} rooms</div>
                </div>

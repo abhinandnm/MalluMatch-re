@@ -53,7 +53,7 @@ const io = new Server(server, {
 
 const bannedIPs = new Set();
 const reports = [];
-const pastSessions = []; // Past 12 hours sessions
+const pastSessions = []; // Past 24 hours sessions
 const safetyViolations = [];
 const userStrikes = new Map(); // IP -> count
 const lastMessageTime = new Map(); // socketId -> timestamp
@@ -86,9 +86,21 @@ const saveChatLogs = () => {
 // Periodic cleanup every hour
 setInterval(() => {
   const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
-  const initialLength = liveLogs.length;
+  
+  // Clean live logs
+  const initialLogsLength = liveLogs.length;
   liveLogs = liveLogs.filter(log => log.timestamp > twentyFourHoursAgo);
-  if (liveLogs.length !== initialLength) {
+  
+  // Clean past sessions
+  const initialSessionsLength = pastSessions.length;
+  // Note: pastSessions contains room objects which have startTime
+  // We clean up sessions that ended more than 24 hours ago, or if we don't have endTime, use startTime
+  pastSessions = pastSessions.filter(session => {
+     const sessionTime = session.endTime || session.startTime;
+     return sessionTime > twentyFourHoursAgo;
+  });
+
+  if (liveLogs.length !== initialLogsLength || pastSessions.length !== initialSessionsLength) {
     saveChatLogs();
     io.to('admins').emit('admin_auth_success', { 
        reports, 
