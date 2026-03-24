@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, X } from 'lucide-react';
+import { BellRing, X } from 'lucide-react';
 import './NotificationPrompt.css';
 
 const VAPID_PUBLIC_KEY = 'BOGyEieopYd5mBFQjpIPY58PWb96A094WIfvSwOmPLuQ_ReHs_3CUfqqdXH3K36TI0vNy-Af-joCs97Gp6u9-ds';
@@ -70,7 +70,7 @@ const NotificationPrompt = ({ onClose }) => {
     <div className="notification-prompt-overlay">
       <div className="notification-prompt-card">
         <div className="notification-prompt-header">
-           <Bell className="bell-icon" size={24} />
+           <BellRing className="bell-icon" size={24} />
            <h3>Stay Connected!</h3>
         </div>
         <p>Would you like to get notified when MalluMatch has high traffic? Don't miss your match!</p>
