@@ -456,7 +456,7 @@ io.on('connection', (socket) => {
         timestamp: Date.now()
       };
       liveLogs.push(logEntry);
-      saveChatLogs();
+      saveHistory();
 
       const room = matchMaker.activeRooms.get(roomId);
       if (room) {
@@ -612,7 +612,7 @@ io.on('connection', (socket) => {
       
       // Update logs
       liveLogs.push(logEntry);
-      saveChatLogs();
+      saveHistory();
       
       const room = matchMaker.activeRooms.get(roomId);
       if (room) {
