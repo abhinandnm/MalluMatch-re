@@ -622,6 +622,19 @@
   background: #222;
 }
 
+.message-bubble.system {
+  align-self: center;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  font-weight: 600;
+  text-align: center;
+  max-width: 90%;
+  margin: 10px 0;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
 /* Typing Indicator */
 .typing-indicator {
   display: flex;

@@ -414,6 +414,12 @@ export default function ChatRoom() {
         navigate('/');
       });
 
+      socket.on('error', ({ message }) => {
+        playSfx(alertSound);
+        // Show as a system message in the chat
+        setMessages((prev) => [...prev, { sender: 'system', text: message, isError: true }]);
+      });
+
       // 🔥 FIXED: Attach listeners BEFORE starting media/queue to avoid missing events
       if (socket.connected) {
          setupMedia();
@@ -828,7 +834,7 @@ export default function ChatRoom() {
           <div className="chat-body" ref={chatboxRef}>
             <div className="status-msg">{status}</div>
             {messages.map((m, i) => (
-              <div key={i} className={`message-bubble ${m.sender === 'me' ? 'me' : 'stranger'}`}>
+              <div key={i} className={`message-bubble ${m.sender === 'me' ? 'me' : m.sender === 'system' ? 'system' : 'stranger'}`}>
                 <div>{m.text}</div>
               </div>
             ))}

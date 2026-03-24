@@ -14,16 +14,40 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 
-// Use Helmet for security headers
+const allowedOrigins = [
+  'https://mallu-match.vercel.app',
+  'https://mallumatch.vercel.app',
+  'https://xentoolpdf.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+
+app.use(express.json());
+
+// Use Helmet for security headers, but relax for CORS/Sockets
 app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"], // Allow CDN for nsfwjs if needed
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https://*"],
-      connectSrc: ["'self'", "wss:", "https://*"], // For socket.io and APIs
+      connectSrc: ["'self'", "wss:", "https://*", "https://mallumatch-chat.duckdns.org"],
     },
   },
 }));
@@ -39,24 +63,12 @@ const limiter = rateLimit({
 // Apply rate limiter to all API routes
 app.use('/api/', limiter);
 
-const allowedOrigins = [
-  'https://mallu-match.vercel.app',
-  'https://mallumatch.vercel.app',
-  'https://xentoolpdf.vercel.app'
-];
-const frontendUrl = allowedOrigins;
-
-app.use(cors({
-  origin: frontendUrl,
-  methods: ['GET', 'POST']
-}));
-app.use(express.json()); // Allow parsing JSON bodies
-
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: frontendUrl,
-    methods: ['GET', 'POST']
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true
   },
   connectionStateRecovery: {
     // max 2 mins of state recovery
@@ -70,37 +82,57 @@ const io = new Server(server, {
 
 const bannedIPs = new Set();
 const reports = [];
-const pastSessions = []; // Past 24 hours sessions
 const safetyViolations = [];
 const userStrikes = new Map(); // IP -> count
 const lastMessageTime = new Map(); // socketId -> timestamp
 const lastMessages = new Map(); // socketId -> lastMessageText
 const spamStrikes = new Map(); // socketId -> strikeCount
+const backgroundStrikes = new Map(); // socketId -> totalStrikePoints
+const lastNextTime = new Map(); // socketId -> timestamp
 const ipConnections = new Map(); // IP -> count
 const tempBans = new Map(); // IP -> expiryTime
+const adminStrikes = new Map(); // IP -> failureCount
+const adminSessions = new Map(); // socketId -> IP
 
 const chatLogsPath = path.join(__dirname, 'chat_logs.json');
+const sessionsPath = path.join(__dirname, 'session_history.json');
 let liveLogs = []; // Feed of all text messages
+let pastSessions = []; // Past 24 hours sessions
 
-// Initial load of chat logs
+// Helper for IST time string
+const getISTString = (date) => {
+  return new Date(date).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+};
+
+// Initial load of logs
 try {
+  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+  
   if (fs.existsSync(chatLogsPath)) {
-    const data = fs.readFileSync(chatLogsPath, 'utf8');
-    liveLogs = JSON.parse(data);
-    
-    // Initial cleanup of old messages (> 24h)
-    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+    liveLogs = JSON.parse(fs.readFileSync(chatLogsPath, 'utf8'));
     liveLogs = liveLogs.filter(log => log.timestamp > twentyFourHoursAgo);
   }
+  
+  if (fs.existsSync(sessionsPath)) {
+    pastSessions = JSON.parse(fs.readFileSync(sessionsPath, 'utf8'));
+    pastSessions = pastSessions.filter(session => (session.endTime || session.startTime) > twentyFourHoursAgo);
+  }
 } catch (err) {
-  console.error('Error loading chat_logs.json:', err);
+  console.error('Error loading history files:', err);
 }
 
-const saveChatLogs = () => {
+const saveHistory = () => {
   try {
     fs.writeFileSync(chatLogsPath, JSON.stringify(liveLogs, null, 2));
+    fs.writeFileSync(sessionsPath, JSON.stringify(pastSessions, null, 2));
   } catch (err) {
-    console.error('Error saving chat_logs.json:', err);
+    console.error('Error saving history files:', err);
   }
 };
 
@@ -122,7 +154,8 @@ setInterval(() => {
   });
 
   if (liveLogs.length !== initialLogsLength || pastSessions.length !== initialSessionsLength) {
-    saveChatLogs();
+    saveHistory();
+    // Update connected admins
     io.to('admins').emit('admin_auth_success', { 
        reports, 
        liveLogs, 
@@ -131,7 +164,8 @@ setInterval(() => {
        safetyViolations,
        activeRooms: Array.from(matchMaker.activeRooms.entries()),
        pastSessions,
-       onlineUsers
+       onlineUsers,
+       adminSessions: Array.from(adminSessions.values())
     });
   }
 }, 60 * 60 * 1000);
@@ -322,11 +356,12 @@ const broadcastUserCount = () => {
 
 io.on('connection', (socket) => {
   const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+  console.log(`[CONN] New connection from ${socket.id} (IP: ${ip})`);
 
   // Check for temporary bans
   const banExpiry = tempBans.get(ip);
   if (banExpiry && Date.now() < banExpiry) {
-    socket.emit('error', { message: `Your IP is temporarily banned until ${new Date(banExpiry).toLocaleTimeString()}.` });
+    socket.emit('error', { message: `Your IP is temporarily banned until ${getISTString(banExpiry)}.` });
     socket.disconnect();
     return;
   }
@@ -360,6 +395,21 @@ io.on('connection', (socket) => {
   });
 
   socket.on('next_stranger', ({ type, interests }) => {
+    const now = Date.now();
+    const lastTime = lastNextTime.get(socket.id) || 0;
+    if (now - lastTime < 2000) { // If clicking next faster than every 2s
+      const current = backgroundStrikes.get(socket.id) || 0;
+      const updated = current + 2;
+      backgroundStrikes.set(socket.id, updated);
+      
+      if (updated >= 10) {
+        console.log(`[SPAM] Kicking ${socket.id} for 'Next' button spamming.`);
+        socket.emit('kicked', { message: 'You were kicked for spamming' });
+        setTimeout(() => socket.disconnect(), 500);
+        return;
+      }
+    }
+    lastNextTime.set(socket.id, now);
     matchMaker.next(socket, type, interests);
   });
   
@@ -414,46 +464,41 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // 2. Anti-Spam / Rate Limiting (1 message per second)
+    // --- REVISED SPAM PROTECTION (NON-BLOCKING) ---
+    const incrementStrikes = (amount = 1) => {
+      const current = backgroundStrikes.get(socket.id) || 0;
+      const updated = current + amount;
+      backgroundStrikes.set(socket.id, updated);
+      
+      if (updated >= 10) { // Threshold: 10 points
+        socket.emit('kicked', { message: 'You were kicked for spamming' });
+        console.log(`[SPAM] Kicking ${socket.id} (${ip}) for reaching strike limit.`);
+        setTimeout(() => socket.disconnect(), 100);
+      }
+    };
+
+    // 2. Anti-Spam / Rate Limiting (Strikes instead of blocking)
     const now = Date.now();
     const lastTime = lastMessageTime.get(socket.id) || 0;
-    if (now - lastTime < 1000) {
-      console.warn(`Spam detected from ${socket.id}`);
-      socket.emit('error', { message: 'You are sending messages too fast. Slow down!' });
-      
-      // Increment strikes
-      const strikes = (spamStrikes.get(socket.id) || 0) + 1;
-      spamStrikes.set(socket.id, strikes);
-      
-      if (strikes >= 5) {
-        socket.emit('error', { message: 'You have been kicked for spamming.' });
-        socket.disconnect();
-      }
-      return;
+    if (now - lastTime < 500) { // Fast message (< 0.5s)
+      incrementStrikes(2); // Heavier penalty for very fast messages
+    } else if (now - lastTime < 1000) {
+      incrementStrikes(1);
     }
     lastMessageTime.set(socket.id, now);
     
-    // 3. Duplicate Message Detection
+    // 3. Duplicate Message Detection (Strikes instead of blocking)
     const lastMsg = lastMessages.get(socket.id);
     if (msg === lastMsg) {
-      console.warn(`Duplicate message from ${socket.id}`);
-      socket.emit('error', { message: 'Please do not send the same message twice.' });
-      return;
+      incrementStrikes(2); // Penalty for duplicates
     }
     lastMessages.set(socket.id, msg);
 
-    // 4. Repetitive Character Detection (e.g., "aaaaaaaaa")
-    // If any character repeats more than 15 times
+    // 4. Repetitive Character Detection
     if (/(.)\1{14,}/.test(msg)) {
-      console.warn(`Repetitive characters from ${socket.id}`);
-      socket.emit('error', { message: 'Your message contains too many repetitive characters.' });
-      return;
+      incrementStrikes(3); // Penalty for "aaaaa"
     }
-    
-    // 5. Strike System for Spamming
-    // (Punishment logic already handled above in early returns if we wanted to be strict)
-    // Let's reset strikes if they managed to send a good message
-    spamStrikes.set(socket.id, 0);
+    // --- END REVISED SPAM PROTECTION ---
 
     const roomId = matchMaker.userRooms.get(socket.id);
     if (roomId) {
@@ -498,8 +543,23 @@ io.on('connection', (socket) => {
 
   // Admin Actions
   socket.on('admin_auth', ({ password }) => {
+    const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+    
+    // Check if IP is temporarily banned from admin attempts
+    const banExpiry = tempBans.get(ip);
+    if (banExpiry && Date.now() < banExpiry) {
+      socket.emit('error', { message: 'Too many failed attempts. Try again later.' });
+      return;
+    }
+
     if (password === process.env.ADMIN_PASSWORD) {
+      console.log(`[ADMIN] Successful login from IP: ${ip}`);
+      adminStrikes.delete(ip);
       socket.join('admins');
+      adminSessions.set(socket.id, ip);
+      
+      const sessionList = Array.from(adminSessions.values());
+      
       socket.emit('admin_auth_success', { 
         reports, 
         liveLogs, 
@@ -508,8 +568,26 @@ io.on('connection', (socket) => {
         safetyViolations,
         activeRooms: Array.from(matchMaker.activeRooms.entries()),
         pastSessions,
-        onlineUsers
+        onlineUsers,
+        adminSessions: sessionList
       });
+
+      // Notify other admins
+      io.to('admins').emit('admin_sessions_update', sessionList);
+    } else {
+      console.warn(`[SECURITY] FAILED admin login attempt from IP: ${ip}`);
+      
+      // Strike system for admin portal
+      const strikes = (adminStrikes.get(ip) || 0) + 1;
+      adminStrikes.set(ip, strikes);
+      
+      if (strikes >= 5) {
+        const banPeriod = 60 * 60 * 1000; // 1 hour ban
+        tempBans.set(ip, Date.now() + banPeriod);
+        console.error(`[SECURITY] IP ${ip} temporary banned for 1 hour after 5 failed admin attempts.`);
+        socket.emit('error', { message: 'Too many failed attempts. You are temporarily banned from admin actions.' });
+        adminStrikes.delete(ip);
+      }
     }
   });
 
@@ -570,6 +648,36 @@ io.on('connection', (socket) => {
       currentAnnouncement = message;
       saveSettings();
       io.emit('global_announcement', { message });
+    }
+  });
+
+  socket.on('admin_send_message', ({ roomId, message, password }) => {
+    if (password === process.env.ADMIN_PASSWORD) {
+      const cleanedMsg = cleanMessage(message);
+      const logEntry = { 
+        roomId, 
+        sender: 'Admin', 
+        ip: 'Dashboard',
+        text: cleanedMsg, 
+        time: new Date().toLocaleTimeString(),
+        timestamp: Date.now()
+      };
+      
+      // Send to both users in the room
+      io.to(roomId).emit('chat_message', { sender: 'system', text: `Admin: ${cleanedMsg}` });
+      
+      // Update logs
+      liveLogs.push(logEntry);
+      saveChatLogs();
+      
+      const room = matchMaker.activeRooms.get(roomId);
+      if (room) {
+        room.chatLogs.push(logEntry);
+        io.to('admins').emit('active_rooms_update', Array.from(matchMaker.activeRooms.entries()));
+      }
+      
+      // Send to all admins
+      io.to('admins').emit('live_chat_log', logEntry);
     }
   });
 
@@ -671,10 +779,18 @@ io.on('connection', (socket) => {
     broadcastUserCount();
     matchMaker.handleDisconnect(socket);
     
+    // Cleanup admin session
+    if (adminSessions.has(socket.id)) {
+      adminSessions.delete(socket.id);
+      io.to('admins').emit('admin_sessions_update', Array.from(adminSessions.values()));
+    }
+
     // Cleanup spam tracking
     lastMessageTime.delete(socket.id);
     lastMessages.delete(socket.id);
     spamStrikes.delete(socket.id);
+    backgroundStrikes.delete(socket.id);
+    lastNextTime.delete(socket.id);
   });
 
   // Typing indication

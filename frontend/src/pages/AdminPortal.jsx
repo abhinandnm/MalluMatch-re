@@ -14,6 +14,17 @@ const escapeHTML = (str) => {
   }[m]));
 };
 
+const formatIST = (timestamp) => {
+  if (!timestamp) return 'N/A';
+  return new Date(timestamp).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+};
+
 export default function AdminPortal() {
    const [password, setPassword] = useState('');
    const [isAuth, setIsAuth] = useState(false);
@@ -25,6 +36,7 @@ export default function AdminPortal() {
    const [safetyViolations, setSafetyViolations] = useState([]);
    const [userCountSettings, setUserCountSettings] = useState({ customCount: 100, mode: 'realtime' });
    const [tempCustomCount, setTempCustomCount] = useState(100);
+   const [adminSessions, setAdminSessions] = useState([]);
    
    // Session monitor state
    const [activeRooms, setActiveRooms] = useState([]);
@@ -33,6 +45,7 @@ export default function AdminPortal() {
    const [sessionView, setSessionView] = useState('active'); // 'active' or 'past'
    const [selectedRoomId, setSelectedRoomId] = useState(null);
    const [realOnlineUsers, setRealOnlineUsers] = useState(0);
+   const [adminRoomMessages, setAdminRoomMessages] = useState({});
 
    const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -47,7 +60,7 @@ export default function AdminPortal() {
    }, []);
 
    useEffect(() => {
-      socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings, safetyViolations, activeRooms, pastSessions, onlineUsers }) => {
+      socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings, safetyViolations, activeRooms, pastSessions, onlineUsers, adminSessions }) => {
          setIsAuth(true);
          setReports(reports);
          setLogs(liveLogs);
@@ -61,6 +74,9 @@ export default function AdminPortal() {
          if (userCountSettings) {
             setUserCountSettings(userCountSettings);
             setTempCustomCount(userCountSettings.customCount);
+         }
+         if (adminSessions) {
+            setAdminSessions(adminSessions);
          }
       });
 
@@ -103,6 +119,10 @@ export default function AdminPortal() {
          setPastSessions(sessions);
       });
 
+      socket.on('admin_sessions_update', (sessions) => {
+         setAdminSessions(sessions);
+      });
+
       return () => {
          socket.off('admin_auth_success');
          socket.off('new_report');
@@ -114,6 +134,7 @@ export default function AdminPortal() {
          socket.off('active_rooms_update');
          socket.off('past_sessions_update');
          socket.off('real_online_users');
+         socket.off('admin_sessions_update');
       };
    }, []);
 
@@ -164,17 +185,30 @@ export default function AdminPortal() {
       socket.emit('admin_terminate_room', { roomId });
    };
 
+   const handleAdminSendMessage = (roomId) => {
+      const msg = adminRoomMessages[roomId];
+      if (!msg || !msg.trim()) return;
+      
+      socket.emit('admin_send_message', { roomId, message: msg, password });
+      
+      // Clear the input for this room
+      setAdminRoomMessages(prev => ({
+         ...prev,
+         [roomId]: ''
+      }));
+   };
+
    const handleDownloadChat = () => {
       if (logs.length === 0) return;
       
       // Define CSV headers
-      const headers = ['Time', 'Room', 'Sender', 'IP', 'Message'];
+      const headers = ['Time (IST)', 'Room', 'Sender', 'IP', 'Message'];
       
       // Convert logs to CSV rows
       const csvRows = [
          headers.join(','),
          ...logs.map(l => [
-            `"${l.time || ''}"`,
+            `"${formatIST(l.timestamp) || ''}"`,
             `"${l.roomId || ''}"`,
             `"${l.sender || ''}"`,
             `"${l.ip || ''}"`,
@@ -200,15 +234,15 @@ export default function AdminPortal() {
    const handleDownloadSessions = () => {
       if (displayRooms.length === 0) return;
       
-      const headers = ['Room ID', 'Type', 'Status', 'Start Time', 'End Time', 'Duration', 'User 1 ID', 'User 2 ID', 'Messages'];
+      const headers = ['Room ID', 'Type', 'Status', 'Start Time (IST)', 'End Time (IST)', 'Duration', 'User 1 ID', 'User 2 ID', 'Messages'];
       
       const csvRows = [
          headers.join(','),
          ...displayRooms.map(room => {
             const status = sessionView === 'active' ? 'Active' : 'Ended';
             const duration = formatDuration(room.startTime, room.endTime);
-            const startTime = new Date(room.startTime).toLocaleString();
-            const endTime = room.endTime ? new Date(room.endTime).toLocaleString() : 'N/A';
+            const startTime = formatIST(room.startTime);
+            const endTime = room.endTime ? formatIST(room.endTime) : 'N/A';
             const msgCount = room.chatLogs?.length || 0;
             
             return [
@@ -254,7 +288,7 @@ export default function AdminPortal() {
    const handleExportAllHTML = () => {
       if (displayRooms.length === 0) return;
 
-      const timestamp = new Date().toLocaleString();
+      const timestampIST = formatIST(Date.now());
       const reportTitle = `MalluMatch - ${sessionType === 'video' ? 'Video' : 'Text'} Chat Session Report`;
       
       const htmlContent = `
@@ -292,7 +326,7 @@ export default function AdminPortal() {
             <h1>${reportTitle}</h1>
          </div>
          <div class="meta">
-            Generated: ${timestamp}<br>
+            Generated (IST): ${timestampIST}<br>
             Showing: ${displayRooms.length} Sessions (${sessionView === 'active' ? 'Live' : 'Past 24h'})
          </div>
       </div>
@@ -300,7 +334,7 @@ export default function AdminPortal() {
       <div class="session-grid">
          ${displayRooms.map(room => {
             const duration = formatDuration(room.startTime, room.endTime);
-            const startTime = new Date(room.startTime).toLocaleString();
+            const startTimeIST = formatIST(room.startTime);
             
             return `
             <div class="session-card">
@@ -332,7 +366,7 @@ export default function AdminPortal() {
                </div>
                
                <div class="stats">
-                  <span>Started: ${startTime}</span>
+                  <span>Started (IST): ${startTimeIST}</span>
                   <span>Duration: ${duration}</span>
                </div>
             </div>
@@ -411,7 +445,21 @@ export default function AdminPortal() {
                <h3>Live Stats</h3>
                <div className="stat-row">Active Rooms: <span>{activeRooms.length}</span></div>
                <div className="stat-row">Online Users: <span>{realOnlineUsers}</span></div>
+               <div className="stat-row">Active Admins: <span style={{ color: adminSessions.length > 1 ? '#fbbf24' : '#10b981' }}>{adminSessions.length}</span></div>
             </div>
+
+            {adminSessions.length > 1 && (
+               <div className="user-count-control" style={{ border: '1px solid #fbbf24', background: 'rgba(251, 191, 36, 0.05)' }}>
+                  <h3 style={{ color: '#fbbf24' }}>Other Admins Online</h3>
+                  <div className="ban-list">
+                     {adminSessions.filter(ip => ip !== 'You').map((ip, idx) => (
+                        <div key={idx} className="stat-row" style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+                           IP: <span>{ip}</span>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
 
             <form className="admin-form compact" onSubmit={handleBroadcast}>
                <div className="input-field">
@@ -492,11 +540,11 @@ export default function AdminPortal() {
                </div>
                
                <div className="sub-header-row">
-                 <div className="sub-toggles">
-                    <button className={sessionView === 'active' ? 'active' : ''} onClick={() => setSessionView('active')}>Live Active Rooms</button>
-                    <button className={sessionView === 'past' ? 'active' : ''} onClick={() => setSessionView('past')}>Past 24 Hours</button>
-                 </div>
-                 <div className="stats-info">Showing {displayRooms.length} rooms</div>
+                  <div className="sub-toggles">
+                     <button className={sessionView === 'active' ? 'active' : ''} onClick={() => setSessionView('active')}>Live Active Rooms</button>
+                     <button className={sessionView === 'past' ? 'active' : ''} onClick={() => setSessionView('past')}>Past 24 Hours</button>
+                  </div>
+                  <div className="stats-info">Showing {displayRooms.length} rooms</div>
                </div>
 
                <div className="session-grid">
@@ -515,7 +563,7 @@ export default function AdminPortal() {
                               <span className="user-id">USER ID: {room.user1.substring(0, 4)}</span>
                               {sessionType === 'video' ? (
                                  room.snapshots?.[room.user1] ? (
-                                                                         <div className="snapshot-wrapper">
+                                                                          <div className="snapshot-wrapper">
                                         <img src={room.snapshots[room.user1]} alt="User 1" />
                                         <button 
                                            className="snap-download-btn" 
@@ -533,7 +581,7 @@ export default function AdminPortal() {
                               <span className="user-id">USER ID: {room.user2.substring(0, 4)}</span>
                               {sessionType === 'video' ? (
                                  room.snapshots?.[room.user2] ? (
-                                                                         <div className="snapshot-wrapper">
+                                                                          <div className="snapshot-wrapper">
                                         <img src={room.snapshots[room.user2]} alt="User 2" />
                                         <button 
                                            className="snap-download-btn" 
@@ -569,9 +617,27 @@ export default function AdminPortal() {
                            <button onClick={() => handleKick(room.user1)} className="action-kick">[ KICK USER {room.user1.substring(0, 4)} ]</button>
                            <button onClick={() => handleKick(room.user2)} className="action-kick">[ KICK USER {room.user2.substring(0, 4)} ]</button>
                            {sessionView === 'active' && (
-                              <button onClick={() => handleTerminateRoom(room.id)} className="action-terminate">[ TERMINATE ROOM ]</button>
+                               <button onClick={() => handleTerminateRoom(room.id)} className="action-terminate">[ TERMINATE ROOM ]</button>
                            )}
                         </div>
+
+                        {sessionView === 'active' && (
+                           <div className="admin-message-input" onClick={(e) => e.stopPropagation()}>
+                              <input 
+                                 type="text" 
+                                 placeholder="Message room..." 
+                                 value={adminRoomMessages[room.id] || ''} 
+                                 onChange={(e) => setAdminRoomMessages(prev => ({ ...prev, [room.id]: e.target.value }))}
+                                 onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleAdminSendMessage(room.id);
+                                 }}
+                              />
+                              <button 
+                                 onClick={() => handleAdminSendMessage(room.id)}
+                                 disabled={!adminRoomMessages[room.id]?.trim()}
+                              >Send</button>
+                           </div>
+                        )}
                      </div>
                   ))}
                </div>
@@ -597,7 +663,7 @@ export default function AdminPortal() {
                            <div className="report-meta">
                               <strong>Offender:</strong> {v.userId?.substring(0, 8) || 'Unknown'}<br />
                               <strong>IP:</strong> {v.userIP}<br />
-                              <strong>Time:</strong> {v.timestamp}
+                              <strong>Time (IST):</strong> {formatIST(v.id)}
                            </div>
                            <div className="report-actions">
                               <button onClick={() => handleSafetyAction(v.id, 'ban')} className="action-btn ban">Ban IP</button>
@@ -634,7 +700,7 @@ export default function AdminPortal() {
                               <strong>Target:</strong> {r.offenderId?.substring(0, 6) || 'Unknown'}...<br />
                               <strong>Reason:</strong> <span style={{ color: '#ef4444', fontWeight: 'bold' }}>{r.comment || 'N/A'}</span><br />
                               <strong>IP:</strong> {r.offenderIP}<br />
-                              <strong>Time:</strong> {r.timestamp}
+                              <strong>Time (IST):</strong> {formatIST(r.id)}
                            </div>
                            <div className="report-actions">
                               <button onClick={() => handleKick(r.offenderId)} className="action-btn kick">Kick</button>
@@ -667,7 +733,7 @@ export default function AdminPortal() {
                   {logs.map((l, i) => (
                      <div key={i} className="log-entry chat-feed-entry">
                         <div className="log-main">
-                           <span className="log-time">[{l.time}]</span>
+                           <span className="log-time">[{formatIST(l.timestamp)}]</span>
                            <span className="log-room">Room {l.roomId?.substring(5, 11) || '???'}:</span>
                            <span className="log-text">{l.text}</span>
                         </div>
