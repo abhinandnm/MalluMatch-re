@@ -76,19 +76,13 @@ const io = new Server(server, {
     // whether to expose backup data in the handshake
     skipMiddlewares: true,
   },
-  pingTimeout: 60000,
-  pingInterval: 25000
+  pingTimeout: 30000,
+  pingInterval: 10000
 });
 
 const bannedIPs = new Set();
 const reports = [];
 const safetyViolations = [];
-const userStrikes = new Map(); // IP -> count
-const lastMessageTime = new Map(); // socketId -> timestamp
-const lastMessages = new Map(); // socketId -> lastMessageText
-const spamStrikes = new Map(); // socketId -> strikeCount
-const backgroundStrikes = new Map(); // socketId -> totalStrikePoints
-const lastNextTime = new Map(); // socketId -> timestamp
 const ipConnections = new Map(); // IP -> count
 const tempBans = new Map(); // IP -> expiryTime
 const adminStrikes = new Map(); // IP -> failureCount
@@ -367,8 +361,7 @@ io.on('connection', (socket) => {
   }
 
   const currentIpConnections = ipConnections.get(ip) || 0;
-
-  if (currentIpConnections >= 5) { // Limit to 5 connections per IP
+  if (currentIpConnections >= 10) { // Limit to 10 connections per IP
     socket.emit('error', { message: 'Too many connections from this IP.' });
     socket.disconnect();
     return;
@@ -395,21 +388,6 @@ io.on('connection', (socket) => {
   });
 
   socket.on('next_stranger', ({ type, interests }) => {
-    const now = Date.now();
-    const lastTime = lastNextTime.get(socket.id) || 0;
-    if (now - lastTime < 2000) { // If clicking next faster than every 2s
-      const current = backgroundStrikes.get(socket.id) || 0;
-      const updated = current + 2;
-      backgroundStrikes.set(socket.id, updated);
-      
-      if (updated >= 10) {
-        console.log(`[SPAM] Kicking ${socket.id} for 'Next' button spamming.`);
-        socket.emit('kicked', { message: 'You were kicked for spamming' });
-        setTimeout(() => socket.disconnect(), 500);
-        return;
-      }
-    }
-    lastNextTime.set(socket.id, now);
     matchMaker.next(socket, type, interests);
   });
   
@@ -464,41 +442,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // --- REVISED SPAM PROTECTION (NON-BLOCKING) ---
-    const incrementStrikes = (amount = 1) => {
-      const current = backgroundStrikes.get(socket.id) || 0;
-      const updated = current + amount;
-      backgroundStrikes.set(socket.id, updated);
-      
-      if (updated >= 10) { // Threshold: 10 points
-        socket.emit('kicked', { message: 'You were kicked for spamming' });
-        console.log(`[SPAM] Kicking ${socket.id} (${ip}) for reaching strike limit.`);
-        setTimeout(() => socket.disconnect(), 100);
-      }
-    };
-
-    // 2. Anti-Spam / Rate Limiting (Strikes instead of blocking)
-    const now = Date.now();
-    const lastTime = lastMessageTime.get(socket.id) || 0;
-    if (now - lastTime < 500) { // Fast message (< 0.5s)
-      incrementStrikes(2); // Heavier penalty for very fast messages
-    } else if (now - lastTime < 1000) {
-      incrementStrikes(1);
-    }
-    lastMessageTime.set(socket.id, now);
-    
-    // 3. Duplicate Message Detection (Strikes instead of blocking)
-    const lastMsg = lastMessages.get(socket.id);
-    if (msg === lastMsg) {
-      incrementStrikes(2); // Penalty for duplicates
-    }
-    lastMessages.set(socket.id, msg);
-
-    // 4. Repetitive Character Detection
-    if (/(.)\1{14,}/.test(msg)) {
-      incrementStrikes(3); // Penalty for "aaaaa"
-    }
-    // --- END REVISED SPAM PROTECTION ---
+    // --- REVISED SPAM PROTECTION (DISABLED) ---
 
     const roomId = matchMaker.userRooms.get(socket.id);
     if (roomId) {
@@ -785,12 +729,7 @@ io.on('connection', (socket) => {
       io.to('admins').emit('admin_sessions_update', Array.from(adminSessions.values()));
     }
 
-    // Cleanup spam tracking
-    lastMessageTime.delete(socket.id);
-    lastMessages.delete(socket.id);
-    spamStrikes.delete(socket.id);
-    backgroundStrikes.delete(socket.id);
-    lastNextTime.delete(socket.id);
+    // Cleanup
   });
 
   // Typing indication

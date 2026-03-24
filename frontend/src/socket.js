@@ -7,7 +7,9 @@ const socket = io(SOCKET_URL, {
   reconnectionAttempts: Infinity,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
-  timeout: 20000
+  randomizationFactor: 0.5,
+  timeout: 20000,
+  transports: ['websocket']
 });
 
 export default socket;

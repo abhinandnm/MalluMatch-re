@@ -421,9 +421,7 @@ export default function ChatRoom() {
       });
 
       // 🔥 FIXED: Attach listeners BEFORE starting media/queue to avoid missing events
-      if (socket.connected) {
-         setupMedia();
-      }
+      // Removed redundant setupMedia() here since it's already called in onConnect or at mount if connected.
 
     return () => {
       cleanupPeerConnection();
