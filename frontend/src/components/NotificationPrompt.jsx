@@ -73,7 +73,7 @@ const NotificationPrompt = ({ onClose }) => {
            <BellRing className="bell-icon" size={24} />
            <h3>Stay Connected!</h3>
         </div>
-        <p>Notification permissions are essential to run this feature. Get notified when MalluMatch has high traffic so you don't miss your match!</p>
+        <p>Notification permissions are essential to run this feature, otherwise the app may not work properly.</p>
         <div className="notification-prompt-actions">
           <button className="btn-not-now" onClick={() => { setShow(false); if (onClose) onClose(); }}>Maybe Later</button>
           <button className="btn-allow" onClick={handleSubscribe}>Enable Alerts</button>
