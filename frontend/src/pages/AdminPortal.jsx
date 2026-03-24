@@ -45,7 +45,10 @@ export default function AdminPortal() {
    const [sessionView, setSessionView] = useState('active'); // 'active' or 'past'
    const [selectedRoomId, setSelectedRoomId] = useState(null);
    const [realOnlineUsers, setRealOnlineUsers] = useState(0);
-   const [adminRoomMessages, setAdminRoomMessages] = useState({});
+    const [adminRoomMessages, setAdminRoomMessages] = useState({});
+    const [pushMessage, setPushMessage] = useState('');
+    const [pushStatus, setPushStatus] = useState('');
+
 
    const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -231,7 +234,36 @@ export default function AdminPortal() {
       URL.revokeObjectURL(url);
    };
 
+   const handleSendPush = async (e) => {
+      e.preventDefault();
+      if (!pushMessage.trim()) return;
+      
+      setPushStatus('Sending...');
+      try {
+         const backendUrl = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : 'https://mallumatch-chat.duckdns.org';
+
+         const response = await fetch(`${backendUrl}/api/push/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: pushMessage, password })
+         });
+         
+         const data = await response.json();
+         if (data.success) {
+            setPushStatus(`Sent to ${data.sent} users! (${data.expired} expired removed)`);
+            setPushMessage('');
+         } else {
+            setPushStatus('Failed: ' + (data.message || 'Unknown error'));
+         }
+      } catch (err) {
+         setPushStatus('Error: ' + err.message);
+      }
+   };
+
    const handleDownloadSessions = () => {
+
       if (displayRooms.length === 0) return;
       
       const headers = ['Room ID', 'Type', 'Status', 'Start Time (IST)', 'End Time (IST)', 'Duration', 'User 1 ID', 'User 2 ID', 'Messages'];
@@ -518,7 +550,25 @@ export default function AdminPortal() {
                   ))}
                </div>
             </div>
+
+            <div className="user-count-control" style={{ border: '1px solid #ff3366', background: 'rgba(255, 51, 102, 0.05)' }}>
+               <h3 style={{ color: '#ff3366' }}><BellRing size={16} /> Push Notification</h3>
+               <p style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '10px' }}>Send to all offline users</p>
+               <form onSubmit={handleSendPush} className="admin-form compact">
+                  <div className="input-field">
+                     <textarea
+                        value={pushMessage}
+                        onChange={(e) => setPushMessage(e.target.value)}
+                        placeholder="Push message..."
+                        rows="2"
+                     ></textarea>
+                  </div>
+                  <button type="submit" className="blast-btn" style={{ background: 'linear-gradient(135deg, #ff3366, #ff7e5f)' }}>Send Push</button>
+                  {pushStatus && <p className="status-mini" style={{ color: pushStatus.includes('Error') || pushStatus.includes('Failed') ? '#ef4444' : '#10b981' }}>{pushStatus}</p>}
+               </form>
+            </div>
          </div>
+
 
          <div className="dash-main">
             {/* Session Monitor DB Section */}

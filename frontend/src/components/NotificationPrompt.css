@@ -1,0 +1,150 @@
+
+.notification-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10001; /* Above almost everything */
+  animation: fadeIn 0.3s ease;
+}
+
+.notification-prompt-card {
+  background: var(--bg-card, #fff);
+  padding: 2rem;
+  border-radius: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  position: relative;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.notification-prompt-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+
+.bell-icon {
+    background: linear-gradient(135deg, #ff3366, #ff7e5f);
+    padding: 1rem;
+    color: white;
+    border-radius: 50%;
+    box-shadow: 0 10px 20px rgba(255, 51, 102, 0.2);
+    animation: pulse 2s infinite;
+}
+
+.notification-prompt-card h3 {
+  font-size: 1.5rem;
+  color: var(--text-primary, #333);
+  margin: 0;
+}
+
+.notification-prompt-card p {
+  color: var(--text-secondary, #666);
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 2rem;
+}
+
+.notification-prompt-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-not-now {
+  background: transparent;
+  color: var(--text-secondary, #666);
+  border: 1px solid var(--border-color, #eee);
+  padding: 0.8rem 1.5rem;
+  border-radius: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-not-now:hover {
+  background: var(--bg-hover, #f9f9f9);
+  color: var(--text-primary, #333);
+}
+
+.btn-allow {
+  background: linear-gradient(135deg, #ff3366, #ff7e5f);
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(255, 51, 102, 0.3);
+  transition: all 0.2s;
+}
+
+.btn-allow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(255, 51, 102, 0.4);
+}
+
+.btn-close-icon {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary, #999);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.btn-close-icon:hover {
+  background: var(--bg-hover, #eee);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(255, 51, 102, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .notification-prompt-card {
+  background: #1e1e1e;
+  border-color: #333;
+}
+[data-theme='dark'] .notification-prompt-card h3 {
+  color: #fff;
+}
+[data-theme='dark'] .notification-prompt-card p {
+  color: #aaa;
+}
+[data-theme='dark'] .btn-not-now {
+    border-color: #444;
+    color: #aaa;
+}
+[data-theme='dark'] .btn-not-now:hover {
+    background: #333;
+    color: #fff;
+}

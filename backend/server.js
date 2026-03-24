@@ -11,6 +11,14 @@ const nodemailer = require('nodemailer');
 const { cleanMessage } = require('./filter');
 const { isMalicious } = require('./utils/security');
 const bcrypt = require('bcryptjs');
+const webpush = require('web-push');
+
+webpush.setVapidDetails(
+  'mailto:mallumatch.auth@gmail.com',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
 
 const app = express();
 
@@ -90,8 +98,11 @@ const adminSessions = new Map(); // socketId -> IP
 
 const chatLogsPath = path.join(__dirname, 'chat_logs.json');
 const sessionsPath = path.join(__dirname, 'session_history.json');
+const subscriptionsPath = path.join(__dirname, 'subscriptions.json');
 let liveLogs = []; // Feed of all text messages
 let pastSessions = []; // Past 24 hours sessions
+let pushSubscriptions = [];
+
 
 // Helper for IST time string
 const getISTString = (date) => {
@@ -117,18 +128,25 @@ try {
     pastSessions = JSON.parse(fs.readFileSync(sessionsPath, 'utf8'));
     pastSessions = pastSessions.filter(session => (session.endTime || session.startTime) > twentyFourHoursAgo);
   }
+
+  if (fs.existsSync(subscriptionsPath)) {
+    pushSubscriptions = JSON.parse(fs.readFileSync(subscriptionsPath, 'utf8'));
+  }
 } catch (err) {
   console.error('Error loading history files:', err);
 }
+
 
 const saveHistory = () => {
   try {
     fs.writeFileSync(chatLogsPath, JSON.stringify(liveLogs, null, 2));
     fs.writeFileSync(sessionsPath, JSON.stringify(pastSessions, null, 2));
+    fs.writeFileSync(subscriptionsPath, JSON.stringify(pushSubscriptions, null, 2));
   } catch (err) {
     console.error('Error saving history files:', err);
   }
 };
+
 
 // Periodic cleanup every hour
 setInterval(() => {
@@ -340,7 +358,70 @@ const saveSettings = () => {
   });
 };
 
+// Push Notification Endpoints
+app.post('/api/push/subscribe', (req, res) => {
+  const subscription = req.body;
+  
+  // Check if already exists
+  const exists = pushSubscriptions.find(s => s.endpoint === subscription.endpoint);
+  if (!exists) {
+    pushSubscriptions.push(subscription);
+    saveHistory();
+  }
+  
+  res.status(201).json({});
+});
+
+app.post('/api/push/send', async (req, res) => {
+  const { message, password } = req.body;
+  
+  if (password !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  const payload = JSON.stringify({
+    title: 'MalluMatch Alert',
+    body: message,
+    icon: '/logo.png',
+    badge: '/logo.png',
+    data: {
+      url: 'https://mallu-match.vercel.app'
+    }
+  });
+
+  const notifications = pushSubscriptions.map(subscription => {
+    return webpush.sendNotification(subscription, payload).catch(err => {
+      if (err.statusCode === 404 || err.statusCode === 410) {
+        console.log(`Push subscription ${subscription.endpoint} has expired or is no longer valid.`);
+        return { expired: true, endpoint: subscription.endpoint };
+      }
+      console.error('Push error:', err);
+      return { error: true };
+    });
+  });
+
+  const results = await Promise.all(notifications);
+  
+  // Cleanup expired subscriptions
+  const expiredEndpoints = results
+    .filter(r => r && r.expired)
+    .map(r => r.endpoint);
+    
+  if (expiredEndpoints.length > 0) {
+    pushSubscriptions = pushSubscriptions.filter(s => !expiredEndpoints.includes(s.endpoint));
+    saveHistory();
+  }
+
+  res.json({ 
+    success: true, 
+    sent: results.filter(r => r && !r.error && !r.expired).length,
+    failed: results.filter(r => r && r.error).length,
+    expired: expiredEndpoints.length
+  });
+});
+
 const broadcastUserCount = () => {
+
   const displayCount = userCountSettings.mode === 'custom' 
     ? userCountSettings.customCount 
     : onlineUsers;

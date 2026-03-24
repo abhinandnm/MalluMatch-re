@@ -11,6 +11,8 @@ import Contact from './pages/Contact';
 import AdminPortal from './pages/AdminPortal';
 import AgeVerification from './components/AgeVerification';
 import AnnouncementBanner from './components/AnnouncementBanner';
+import NotificationPrompt from './components/NotificationPrompt';
+
 import Article1 from './pages/blog/Article1';
 import Article2 from './pages/blog/Article2';
 import Article3 from './pages/blog/Article3';
@@ -37,6 +39,21 @@ const AppWrapper = () => {
       socket.off('global_announcement');
     };
   }, []);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  }, []);
+
 
   return (
     <Router>
@@ -66,7 +83,9 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
   return (
     <div className={`app-container ${(!ageVerified && !isAdminPage) ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>
       {!ageVerified && !isAdminPage && <AgeVerification onVerify={() => setAgeVerified(true)} />}
+      {ageVerified && !isAdminPage && <NotificationPrompt />}
       <Navbar />
+
       <main className={`main-content ${isChatPage ? 'no-padding' : ''}`}>
         <Routes>
           <Route path="/" element={<Home />} />
