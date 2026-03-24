@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 import './NotificationPrompt.css';
 
-const VAPID_PUBLIC_KEY = 'BLi8JDHGkQt1qISz7-3iLJacpY0FQSgTpVtftT0nUPozM';
+const VAPID_PUBLIC_KEY = 'BOGyEieopYd5mBFQjpIPY58PWb96A094WIfvSwOmPLuQ_ReHs_3CUfqqdXH3K36TI0vNy-Af-joCs97Gp6u9-ds';
+
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
