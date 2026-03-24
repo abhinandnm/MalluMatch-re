@@ -551,9 +551,9 @@ export default function AdminPortal() {
                </div>
             </div>
 
-            <div className="user-count-control" style={{ border: '1px solid #ff3366', background: 'rgba(255, 51, 102, 0.05)' }}>
-               <h3 style={{ color: '#ff3366' }}><BellRing size={16} /> Push Notification</h3>
-               <p style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '10px' }}>Send to all offline users</p>
+            <div className="push-notification-control">
+               <h3><BellRing size={16} /> Push Notification</h3>
+               <p className="push-notification-subtitle">Send to all offline users</p>
                <form onSubmit={handleSendPush} className="admin-form compact">
                   <div className="input-field">
                      <textarea
@@ -563,11 +563,12 @@ export default function AdminPortal() {
                         rows="2"
                      ></textarea>
                   </div>
-                  <button type="submit" className="blast-btn" style={{ background: 'linear-gradient(135deg, #ff3366, #ff7e5f)' }}>Send Push</button>
+                  <button type="submit" className="btn-push-send">Send Push Notification</button>
                   {pushStatus && <p className="status-mini" style={{ color: pushStatus.includes('Error') || pushStatus.includes('Failed') ? '#ef4444' : '#10b981' }}>{pushStatus}</p>}
                </form>
             </div>
          </div>
+
 
 
          <div className="dash-main">
