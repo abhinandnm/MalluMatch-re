@@ -1,43 +1,22 @@
 const badwords = {
   "en": [
-    "arse",
-    "ass",
-    "asshole",
-    "bastard",
-    "bitch",
-    "bollocks",
-    "bugger",
-    "bullshit",
-    "crap",
-    "cunt",
-    "damn",
-    "dick",
-    "dildo",
-    "fag",
-    "fuck",
-    "fucking",
-    "goddamn",
-    "hell",
-    "holy shit",
-    "jackass",
-    "motherfucker",
-    "nigga",
-    "nigger",
-    "piss",
-    "pussy",
-    "shit",
-    "slut",
-    "son of a bitch",
-    "twat",
-    "wanker",
-    "whore"
+    "arse", "ass", "asshole", "bastard", "bitch", "bollocks", "bugger", "bullshit", "crap", "cunt", "damn", "dick", "dildo", "fag", "fcuk", "fuck", "fucking", "goddamn", "hell", "holy shit", "jackass", "motherfucker", "nigga", "nigger", "piss", "pusssy", "pussy", "sex", "sexx", "shit", "slut", "son of a bitch", "twat", "wanker", "whore"
   ],
   "ml": [
-    "thayoli", "pandi", "poori", "vannam", "palkuppi", "kunna", "andi", "myre", "mypu", "oombi", "kundala", "kundan", "vettavali", "nayinte mone", "panni", "theetam", "kazhuveriyamone", "polayadi", "thalla", "appi", "madama", "vadi", "kandara", "pulayar", "parayar", "pulu", "punda", "koothi", "oomfi", "paalkuppi", "myran", "pooran"
+    "andi", "andy", "appi", "chut", "chutiya", "kandara", "kazhuveriyamone", "kazhuveriydemone", "koothi", "kundala", "kundan", "kunna", "kunne", "kunnee", "madama", "mypu", "myr", "myran", "myre", "myru", "nayinte mone", "oomb", "oombi", "oomfi", "paalkuppi", "palkuppi", "pandi", "panni", "parayar", "polayadi", "pooran", "poori", "pulayar", "pulu", "punda", "thalla", "thayoli", "theetam", "thund", "umb", "umbiko", "vaanam", "vadi", "vannam", "vettavali"
+  ],
+  "hi": [
+    "bakchod", "bc", "behenchod", "bevakoof", "bhadua", "chutiya", "gadha", "harami", "kamina", "kutta", "madarchod", "mc", "randi", "saala"
+  ],
+  "te": [
+    "bokka", "chillara", "gaadida", "lanja", "madda", "munda", "nayala", "pooku", "vedava", "yedava"
+  ],
+  "ta": [
+    "baadu", "gomma", "koothi", "mayir", "ommalotha", "otha", "panni", "pundi", "thayoli", "thevudiya"
   ]
 };
 
-const allBadwords = [...badwords.en, ...badwords.ml];
+const allBadwords = Object.values(badwords).flat();
 
 /**
  * Escapes special characters in a string for use in a regular expression.

@@ -385,7 +385,8 @@ export default function ChatRoom() {
       });
 
       socket.on('chat_message', (msg) => {
-        setMessages((prev) => [...prev, msg]);
+        const cleanedMsg = { ...msg, text: cleanMessage(msg.text) };
+        setMessages((prev) => [...prev, cleanedMsg]);
         if (msg.sender !== 'me') {
           playSfx(receiveSound);
           // Automatically open chat panel when stranger sends a message
