@@ -10,6 +10,9 @@ const testCases = [
   { input: "Don't be a dick", expected: "Don't be a ####" },
   { input: "Mixed language: You are a thayoli and a bastard", expected: "Mixed language: You are a ####### and a #######" },
   { input: "Case sensitivity: FUCK you", expected: "Case sensitivity: #### you" },
+  { input: "Hindi test: tum ek chutiya ho", expected: "Hindi test: tum ek ####### ho" },
+  { input: "Telugu test: yedava na kodaka", expected: "Telugu test: ###### na kodaka" },
+  { input: "Tamil test: ommalotha", expected: "Tamil test: #########" },
 ];
 
 console.log("Running Chat Filter Tests...\n");

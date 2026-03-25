@@ -13,7 +13,7 @@ try {
   console.error('Error loading badwords.json:', err);
 }
 
-const allBadwords = [...badwords.en, ...badwords.ml];
+const allBadwords = Object.values(badwords).flat();
 
 /**
  * Escapes special characters in a string for use in a regular expression.

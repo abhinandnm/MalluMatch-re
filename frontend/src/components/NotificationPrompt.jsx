@@ -34,6 +34,11 @@ const NotificationPrompt = ({ onClose }) => {
   const handleSubscribe = async () => {
     try {
       const permission = await Notification.requestPermission();
+      
+      // Close UI immediately after user interaction with the browser prompt
+      setShow(false);
+      if (onClose) onClose();
+
       if (permission === 'granted') {
         const registration = await navigator.serviceWorker.ready;
         const subscription = await registration.pushManager.subscribe({
@@ -55,10 +60,9 @@ const NotificationPrompt = ({ onClose }) => {
 
         console.log('Successfully subscribed to push notifications');
       }
-      setShow(false);
-      if (onClose) onClose();
     } catch (err) {
       console.error('Failed to subscribe to push notifications:', err);
+      // Ensure UI is closed even on error if not already handled
       setShow(false);
       if (onClose) onClose();
     }
