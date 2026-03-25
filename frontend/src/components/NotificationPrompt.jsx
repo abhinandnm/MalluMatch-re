@@ -75,14 +75,11 @@ const NotificationPrompt = ({ onClose }) => {
         </div>
         <p>Notification permissions are essential to run this feature, otherwise the app may not work properly.</p>
         <div className="notification-prompt-actions">
-          <button className="btn-not-now" onClick={() => { setShow(false); if (onClose) onClose(); }}>Maybe Later</button>
           <button className="btn-allow" onClick={handleSubscribe}>Enable Alerts</button>
         </div>
-        <button className="btn-close-icon" onClick={() => { setShow(false); if (onClose) onClose(); }}>
-          <X size={18} />
-        </button>
       </div>
     </div>
+
   );
 };
 

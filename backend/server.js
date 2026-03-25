@@ -436,13 +436,15 @@ io.on('connection', (socket) => {
   // Check for temporary bans
   const banExpiry = tempBans.get(ip);
   if (banExpiry && Date.now() < banExpiry) {
+    console.warn(`[REJECT] Banned IP attempt: ${ip} (Expires: ${getISTString(banExpiry)})`);
     socket.emit('error', { message: `Your IP is temporarily banned until ${getISTString(banExpiry)}.` });
     socket.disconnect();
     return;
   }
 
   const currentIpConnections = ipConnections.get(ip) || 0;
-  if (currentIpConnections >= 10) { // Limit to 10 connections per IP
+  if (currentIpConnections >= 50) { // Limit to 50 connections per IP
+    console.warn(`[REJECT] Too many connections from IP: ${ip} (Count: ${currentIpConnections})`);
     socket.emit('error', { message: 'Too many connections from this IP.' });
     socket.disconnect();
     return;

@@ -5,11 +5,11 @@ const socket = io(SOCKET_URL, {
   autoConnect: true,
   reconnection: true,
   reconnectionAttempts: Infinity,
-  reconnectionDelay: 1000,
+  reconnectionDelay: 2000,
   reconnectionDelayMax: 5000,
   randomizationFactor: 0.5,
   timeout: 20000,
-  transports: ['websocket']
+  transports: ['websocket', 'polling']
 });
 
 export default socket;
