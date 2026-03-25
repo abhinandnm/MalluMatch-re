@@ -182,25 +182,6 @@ setInterval(() => {
   }
 }, 60 * 60 * 1000);
 
-// Inactivity cleanup every 30 seconds
-setInterval(() => {
-  const now = Date.now();
-  const inactivityLimit = 3 * 60 * 1000; // 3 minutes of total silence
-
-  for (const [roomId, room] of matchMaker.activeRooms.entries()) {
-    if (now - room.lastActivity > inactivityLimit) {
-      console.log(`Room ${roomId} terminated due to inactivity.`);
-      
-      const user1 = io.sockets.sockets.get(room.user1);
-      const user2 = io.sockets.sockets.get(room.user2);
-
-      if (user1) user1.emit('error', { message: 'Chat ended due to inactivity.' });
-      if (user2) user2.emit('error', { message: 'Chat ended due to inactivity.' });
-
-      matchMaker.terminateRoom(room.user1, roomId);
-    }
-  }
-}, 30 * 1000);
 
 const MatchMaker = require('./services/matchMaker');
 const matchMaker = new MatchMaker(io, bannedIPs, pastSessions);
