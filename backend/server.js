@@ -430,7 +430,8 @@ const broadcastUserCount = () => {
 };
 
 io.on('connection', (socket) => {
-  const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+  const rawIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+  const ip = rawIp.split(',')[0].trim();
   console.log(`[CONN] New connection from ${socket.id} (IP: ${ip})`);
 
   // Check for temporary bans
@@ -454,9 +455,11 @@ io.on('connection', (socket) => {
 
   if (socket.recovered) {
     // Connection state was recovered
+    socket.wasRecovered = true;
     matchMaker.handleReconnect(socket);
   } else {
     // New connection
+    socket.wasRecovered = false;
     onlineUsers++;
     broadcastUserCount();
   }
@@ -794,7 +797,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+    const rawIp = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
+    const ip = rawIp.split(',')[0].trim();
     const currentIpConnections = ipConnections.get(ip) || 0;
     if (currentIpConnections > 0) {
       ipConnections.set(ip, currentIpConnections - 1);
@@ -802,7 +806,9 @@ io.on('connection', (socket) => {
       ipConnections.delete(ip);
     }
 
-    onlineUsers--;
+    if (!socket.wasRecovered) {
+      onlineUsers = Math.max(0, onlineUsers - 1);
+    }
     broadcastUserCount();
     matchMaker.handleDisconnect(socket);
     

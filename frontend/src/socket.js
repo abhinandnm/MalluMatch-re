@@ -12,4 +12,10 @@ const socket = io(SOCKET_URL, {
   transports: ['websocket', 'polling']
 });
 
+socket.on("connect_error", (error) => {
+  console.error("Socket Connection Error:", error.message);
+  if (error.description) console.error("Error Description:", error.description);
+  if (error.context) console.error("Error Context:", error.context);
+});
+
 export default socket;
