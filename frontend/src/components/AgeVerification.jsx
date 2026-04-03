@@ -12,7 +12,7 @@ export default function AgeVerification({ onVerify }) {
         <h2>Welcome to MalluMatch</h2>
         <p>This platform connects you with random strangers for video and text chat.</p>
         <p className="warning">
-          <strong>18+ Only:</strong> By entering, you confirm that you are at least 18 years old and agree to our terms of service.
+          <strong>18+ Only:</strong> By entering, you confirm that you are at least 18 years old and agree to our terms of service!.
         </p>
         <div className="button-group">
           <button 
