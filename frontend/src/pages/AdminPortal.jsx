@@ -149,6 +149,9 @@ export default function AdminPortal() {
 
    const handleLogin = (e) => {
       e.preventDefault();
+      if (!socket.connected) {
+         socket.connect();
+      }
       socket.emit('admin_auth', { password });
    };
 

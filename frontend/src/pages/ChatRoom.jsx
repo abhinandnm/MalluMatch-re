@@ -16,14 +16,14 @@ const iceServers = {
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-    // AWS Custom TURN Server
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    // Public STUN servers
+    { urls: 'stun:stun.services.mozilla.com' },
+    { urls: 'stun:stun.stunprotocol.org:3478' },
+    // AWS Custom TURN Server (Optional fallback)
     {
       urls: "turn:3.80.85.179:3478",
-      username: "testuser",
-      credential: "testpassword"
-    },
-    {
-      urls: "turn:3.80.85.179:3478?transport=tcp",
       username: "testuser",
       credential: "testpassword"
     }
@@ -505,14 +505,21 @@ export default function ChatRoom() {
     peerConnectionRef.current.oniceconnectionstatechange = () => {
       const state = peerConnectionRef.current.iceConnectionState;
       console.log("ICE Connection State:", state);
-      if (state === 'failed' || state === 'disconnected') {
-        setStatus("Connection unstable. Trying to reconnect...");
-        // After 5s of failure, alert about firewall/NAT if still disconnected
-        setTimeout(() => {
-          if (peerConnectionRef.current?.iceConnectionState === 'failed') {
-            setStatus("Connection blocked by network firewall. Try switching to Data/WiFi.");
-          }
-        }, 5000);
+      
+      switch(state) {
+        case 'connected':
+          console.log("✅ P2P Connection established!");
+          break;
+        case 'failed':
+          console.error("❌ ICE connection failed. This usually means a firewall or strict NAT is blocking P2P.");
+          setStatus("Connection blocked by network firewall. Try switching to Data/WiFi.");
+          break;
+        case 'disconnected':
+          console.warn("⚠️ ICE connection lost.");
+          setStatus("Connection unstable. Trying to reconnect...");
+          break;
+        default:
+          break;
       }
     };
   };

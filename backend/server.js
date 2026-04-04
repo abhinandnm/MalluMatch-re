@@ -79,13 +79,13 @@ const io = new Server(server, {
     credentials: true
   },
   connectionStateRecovery: {
-    // max 2 mins of state recovery
     maxDisconnectionDuration: 2 * 60 * 1000,
-    // whether to expose backup data in the handshake
     skipMiddlewares: true,
   },
-  pingTimeout: 30000,
-  pingInterval: 10000
+  pingTimeout: 60000, // Increased to allow more stability on mobile data
+  pingInterval: 25000,
+  transports: ['polling', 'websocket'], // Matching frontend for solid handshake
+  allowEIO3: true // Backward compatibility if needed
 });
 
 const bannedIPs = new Set();
