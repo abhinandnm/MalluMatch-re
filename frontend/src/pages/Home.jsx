@@ -45,7 +45,7 @@ export default function Home() {
              <span className="pulse-dot"></span>
              <strong>{onlineCount.toLocaleString()}</strong> users online right now
           </div>
-          <h1>The Best <span className="text-gradient">Random Chat App</span> Online</h1>
+          <h1>Kerala's Own <span className="text-gradient">Random Chat App</span></h1>
           <p className="subtitle">
             Welcome to Mallu Match. Chat with strangers online through high-quality random video and text. Secure, free, and anonymous.
           </p>
