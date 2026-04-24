@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import socket from '../socket';
 import { Video, MessageSquare, Shield, Users, Zap, Plus, Check } from 'lucide-react';
 import AdBanner from '../components/AdBanner';
@@ -20,6 +20,7 @@ export default function DesktopHome() {
   const [onlineCount, setOnlineCount] = useState(0);
   const [interestsInput, setInterestsInput] = useState('');
   const [selectedMode, setSelectedMode] = useState('text');
+  const canvasRef = useRef(null);
 
   useEffect(() => {
     const handleOnlineUsers = (data) => {
@@ -33,6 +34,116 @@ export default function DesktopHome() {
     };
   }, []);
 
+  // Cursor glow effect
+  useEffect(() => {
+    const cursorGlow = document.getElementById('cursor-glow');
+    
+    const handleMouseMove = (e) => {
+      if (cursorGlow) {
+        requestAnimationFrame(() => {
+          cursorGlow.style.left = `${e.clientX}px`;
+          cursorGlow.style.top = `${e.clientY}px`;
+        });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Particle trailing effect
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+
+    let particlesArray = [];
+    const colors = ['#8b5cf6', '#3b82f6', '#10b981', '#eab308', '#e879f9'];
+
+    const setCanvasSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    
+    setCanvasSize();
+    window.addEventListener('resize', setCanvasSize);
+
+    const mouse = { x: null, y: null };
+
+    const handleMouseMove = (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+      for (let i = 0; i < 3; i++) {
+        particlesArray.push(new Particle());
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    class Particle {
+      constructor() {
+        this.x = mouse.x;
+        this.y = mouse.y;
+        this.size = Math.random() * 4 + 1;
+        this.speedX = Math.random() * 2 - 1;
+        this.speedY = Math.random() * 2 - 1;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.size > 0.1) this.size -= 0.05;
+      }
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    const handleParticles = () => {
+      for (let i = 0; i < particlesArray.length; i++) {
+        particlesArray[i].update();
+        particlesArray[i].draw();
+        
+        for (let j = i; j < particlesArray.length; j++) {
+          const dx = particlesArray[i].x - particlesArray[j].x;
+          const dy = particlesArray[i].y - particlesArray[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < 40) {
+            ctx.beginPath();
+            ctx.strokeStyle = particlesArray[i].color + '40'; // add transparency
+            ctx.lineWidth = 0.5;
+            ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
+            ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
+            ctx.stroke();
+          }
+        }
+        
+        if (particlesArray[i].size <= 0.1) {
+          particlesArray.splice(i, 1);
+          i--;
+        }
+      }
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      handleParticles();
+      animationFrameId = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    return () => {
+      window.removeEventListener('resize', setCanvasSize);
+      window.removeEventListener('mousemove', handleMouseMove);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
   const handleStart = () => {
     const interests = interestsInput.split(',').map(i => i.trim().toLowerCase()).filter(i => i);
     navigate('/chat', { state: { type: selectedMode, interests } });
@@ -40,6 +151,11 @@ export default function DesktopHome() {
 
   return (
     <div className="home-container">
+      {/* Interactive Particle Canvas */}
+      <canvas ref={canvasRef} className="particle-canvas"></canvas>
+      
+      {/* Cursor Glow Effect */}
+      <div id="cursor-glow" className="cursor-glow"></div>
 
       <div className="hero-section">
         {/* Floating Bubbles Background */}
