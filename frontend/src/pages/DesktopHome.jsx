@@ -22,12 +22,14 @@ export default function DesktopHome() {
   const [selectedMode, setSelectedMode] = useState('text');
 
   useEffect(() => {
-    socket.on('online_users', (data) => {
+    const handleOnlineUsers = (data) => {
       setOnlineCount(typeof data === 'object' ? data.count : data);
-    });
+    };
+    
+    socket.on('online_users', handleOnlineUsers);
 
     return () => {
-      socket.off('online_users');
+      socket.off('online_users', handleOnlineUsers);
     };
   }, []);
 

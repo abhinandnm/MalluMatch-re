@@ -11,12 +11,14 @@ export default function MobileHome() {
   const [interestsInput, setInterestsInput] = useState('');
 
   useEffect(() => {
-    socket.on('online_users', (data) => {
+    const handleOnlineUsers = (data) => {
       setOnlineCount(typeof data === 'object' ? data.count : data);
-    });
+    };
+    
+    socket.on('online_users', handleOnlineUsers);
     
     return () => {
-      socket.off('online_users');
+      socket.off('online_users', handleOnlineUsers);
     };
   }, []);
 

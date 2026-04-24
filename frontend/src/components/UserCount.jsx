@@ -6,13 +6,15 @@ export default function UserCount() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    socket.on('online_users', (data) => {
+    const handleOnlineUsers = (data) => {
       // The backend now sends { count: number }
       setCount(typeof data === 'object' ? data.count : data);
-    });
+    };
+    
+    socket.on('online_users', handleOnlineUsers);
 
     return () => {
-      socket.off('online_users');
+      socket.off('online_users', handleOnlineUsers);
     };
   }, []);
 
