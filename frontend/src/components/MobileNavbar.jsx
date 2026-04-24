@@ -1,8 +1,8 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import UserCount from './UserCount';
 import ThemeToggle from './ThemeToggle';
 
-export default function MobileNavbar() {
+export default function Navbar() {
   return (
     <header>
       <Link to="/" className="logo">

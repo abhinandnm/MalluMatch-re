@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 
-export default function MobileFooter() {
+export default function Footer() {
   return (
     <footer>
       <p>&copy; {new Date().getFullYear()} MalluMatch. All rights reserved.</p>

@@ -26,7 +26,7 @@ export default function MobileHome() {
   };
 
   return (
-    <div className="home-container">
+    <div className="mobile-home-container">
       
       <div className="hero-section">
         {/* Matrix Earth Background - Desktop Only */}
@@ -51,7 +51,7 @@ export default function MobileHome() {
           </p>
         </div>
 
-        <div className="action-card">
+        <div className="mobile-action-card">
           <h3>Choose your experience</h3>
           <p className="action-desc">No registration required. Just jump right in.</p>
           
