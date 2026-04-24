@@ -265,6 +265,7 @@ footer {
   display: flex;
   justify-content: center;
   gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .footer-links a {
@@ -408,4 +409,44 @@ footer {
 
 .premium-page-card li {
   margin-bottom: 0.5rem;
+}
+
+/* Global Mobile Responsiveness */
+@media (max-width: 640px) {
+  header {
+    padding: 1rem;
+  }
+  
+  footer {
+    padding: 1.5rem 1rem;
+  }
+
+  .premium-page-container {
+    padding: 2rem 1rem;
+    min-height: calc(100vh - 120px);
+  }
+
+  .premium-page-card {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  .premium-page-card h1 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .premium-page-card h2 {
+    font-size: 1.25rem;
+    margin-top: 1.5rem;
+  }
+
+  .premium-page-card p, 
+  .premium-page-card li {
+    font-size: 0.95rem;
+  }
+  
+  .main-content {
+    padding: 0 1rem;
+  }
 }
