@@ -1,16 +1,8 @@
-import { Link } from 'react-router-dom';
-import UserCount from './UserCount';
+import useIsMobile from '../hooks/useIsMobile';
+import DesktopNavbar from './DesktopNavbar';
+import MobileNavbar from './MobileNavbar';
 
 export default function Navbar() {
-  return (
-    <header>
-      <Link to="/" className="logo">
-        MALLU <span>MATCH</span>
-      </Link>
-      <div className="tagline">Talk to strangers!</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <UserCount />
-      </div>
-    </header>
-  );
+  const isMobile = useIsMobile();
+  return isMobile ? <MobileNavbar /> : <DesktopNavbar />;
 }

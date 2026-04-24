@@ -412,38 +412,70 @@ footer {
 }
 
 /* Global Mobile Responsiveness */
-@media (max-width: 640px) {
+@media (max-width: 1024px) {
+  .network-bg {
+    display: none;
+  }
+
+  body {
+    background-color: var(--color-bg);
+  }
+
   header {
     padding: 1rem;
+    background-color: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    backdrop-filter: none;
+    box-shadow: none;
   }
   
   footer {
     padding: 1.5rem 1rem;
+    background-color: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+    backdrop-filter: none;
+    box-shadow: none;
   }
 
   .premium-page-container {
-    padding: 2rem 1rem;
+    padding: 1rem;
     min-height: calc(100vh - 120px);
+    display: block; /* remove flex centering */
   }
 
   .premium-page-card {
-    padding: 1.5rem;
-    border-radius: 16px;
+    padding: 1rem;
+    border-radius: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    color: var(--color-text);
   }
 
   .premium-page-card h1 {
     font-size: 1.75rem;
     margin-bottom: 1.5rem;
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: var(--color-text);
+    color: var(--color-text);
   }
 
-  .premium-page-card h2 {
-    font-size: 1.25rem;
-    margin-top: 1.5rem;
+  .premium-page-card h2, 
+  .premium-page-card h3 {
+    color: var(--color-text);
+  }
+
+  .premium-page-card a {
+    color: var(--color-primary);
   }
 
   .premium-page-card p, 
   .premium-page-card li {
-    font-size: 0.95rem;
+    font-size: 1rem;
+    color: var(--color-text);
   }
   
   .main-content {
