@@ -48,17 +48,17 @@ const AppWrapper = () => {
     <Router>
       <SEOUpdater />
       {announcement && (
-        <AnnouncementBanner 
-          message={announcement} 
-          onClear={() => setAnnouncement('')} 
+        <AnnouncementBanner
+          message={announcement}
+          onClear={() => setAnnouncement('')}
         />
       )}
 
-      <AppContent 
-        ageVerified={ageVerified} 
+      <AppContent
+        ageVerified={ageVerified}
         setAgeVerified={setAgeVerified}
-        announcement={announcement} 
-        setAnnouncement={setAnnouncement} 
+        announcement={announcement}
+        setAnnouncement={setAnnouncement}
       />
     </Router>
   );
@@ -71,6 +71,7 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
 
   return (
     <div className={`app-container ${(!ageVerified && !isAdminPage) ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>
+      <div className="network-bg"></div>
       {!ageVerified && !isAdminPage && <AgeVerification onVerify={() => setAgeVerified(true)} />}
       {ageVerified && !isAdminPage && <NotificationPrompt />}
       <Navbar />

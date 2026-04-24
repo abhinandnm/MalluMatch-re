@@ -60,6 +60,29 @@
   50% { opacity: 0.8; filter: blur(12px); transform: scaleX(1.1); }
 }
 
+/* Network Background (Global) */
+.network-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -3;
+  background-color: #050505;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.05), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.05), transparent 25%);
+}
+
+.network-bg::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.2;
+}
+
 @keyframes slide-down {
   from { transform: translateY(-100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -176,10 +199,10 @@ input, button, textarea {
 /* Header */
 header {
   padding: 1.25rem 2rem;
-  background-color: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--glass-border);
+  background-color: rgba(5, 5, 5, 0.6); /* Match the main body bg roughly but let it blend */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -187,14 +210,14 @@ header {
   position: sticky;
   top: 0;
   z-index: 50;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .logo {
   font-size: 1.85rem;
   font-family: var(--font-heading);
   font-weight: 800;
-  color: var(--color-text);
+  color: #ffffff;
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -212,34 +235,46 @@ header {
 /* Removed .navbar-logo-img styles as it is replaced by text */
 
 .logo span {
-  color: var(--color-primary);
+  color: #3b82f6;
+}
+
+.tagline {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
 }
 
 /* Footer */
 footer {
-  padding: 2rem;
+  padding: 2.5rem 2rem;
   text-align: center;
   font-size: 0.9rem;
-  color: var(--color-text-muted);
-  border-top: 1px solid var(--color-border);
+  color: #94a3b8;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   margin-top: auto;
-  background-color: var(--color-bg-card);
+  background-color: rgba(5, 5, 5, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .footer-links {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   display: flex;
   justify-content: center;
   gap: 1.5rem;
 }
 
 .footer-links a {
-  color: var(--color-text-muted);
-  font-weight: 400;
+  color: #cbd5e1;
+  font-weight: 500;
+  transition: color 0.2s;
 }
 
 .footer-links a:hover {
-  color: var(--color-primary);
+  color: #3b82f6;
 }
 
 /* Custom Scrollbar */
@@ -299,4 +334,78 @@ footer {
   background-color: #10b981;
   border-radius: 50%;
   animation: status-pulse 2s infinite;
+}
+
+/* Premium Page Standard Styling */
+.premium-page-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 160px);
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+
+.premium-page-card {
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 3rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  color: #d1d5db;
+  line-height: 1.7;
+}
+
+.premium-page-card h1 {
+  font-size: 2.5rem;
+  color: #ffffff;
+  margin-bottom: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(to right, #c084fc, #e879f9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.premium-page-card h2 {
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+.premium-page-card h3 {
+  font-size: 1.25rem;
+  color: #ffffff;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.premium-page-card p {
+  margin-bottom: 1.25rem;
+  font-size: 1.05rem;
+}
+
+.premium-page-card a {
+  color: #a855f7;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.premium-page-card a:hover {
+  color: #d8b4fe;
+}
+
+.premium-page-card ul, .premium-page-card ol {
+  margin-bottom: 1.25rem;
+  padding-left: 1.5rem;
+}
+
+.premium-page-card li {
+  margin-bottom: 0.5rem;
 }

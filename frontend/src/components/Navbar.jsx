@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import UserCount from './UserCount';
-import ThemeToggle from './ThemeToggle';
 
 export default function Navbar() {
   return (
@@ -11,7 +10,6 @@ export default function Navbar() {
       <div className="tagline">Talk to strangers!</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <UserCount />
-        <ThemeToggle />
       </div>
     </header>
   );
