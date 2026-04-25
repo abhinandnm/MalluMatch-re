@@ -3,20 +3,20 @@
 :root {
   --color-primary: #3b82f6;
   --color-primary-glow: rgba(59, 130, 246, 0.5);
-  --color-bg: #f8fafc;
-  --color-bg-card: #ffffff;
-  --color-text: #0f172a;
-  --color-text-muted: #64748b;
-  --color-border: rgba(226, 232, 240, 0.8);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.3);
+  --color-bg: #0f172a;
+  --color-bg-card: #1e293b;
+  --color-text: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(15, 23, 42, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
   
   /* Feature Surfaces */
-  --surface-100: #f1f5f9;
-  --surface-200: #f8fafc;
-  --surface-300: #eff6ff;
-  --surface-video: linear-gradient(to right, #eff6ff, #f8fafc);
-  --icon-bg: #ffffff;
+  --surface-100: rgba(30, 41, 59, 0.8);
+  --surface-200: #1e293b;
+  --surface-300: rgba(30, 41, 59, 0.5);
+  --surface-video: linear-gradient(to right, rgba(29, 78, 216, 0.15), rgba(30, 41, 59, 0.6));
+  --icon-bg: #334155;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -29,25 +29,6 @@
   --radius-sm: 8px;
   --radius-md: 14px;
   --radius-lg: 20px;
-}
-
-[data-theme="dark"] {
-  --color-primary: #3b82f6;
-  --color-primary-glow: rgba(59, 130, 246, 0.5);
-  --color-bg: #0f172a;
-  --color-bg-card: #1e293b;
-  --color-text: #f8fafc;
-  --color-text-muted: #94a3b8;
-  --color-border: rgba(255, 255, 255, 0.1);
-  --glass-bg: rgba(15, 23, 42, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.1);
-
-  /* Feature Surfaces Dark */
-  --surface-100: rgba(30, 41, 59, 0.8);
-  --surface-200: var(--color-bg-card);
-  --surface-300: rgba(30, 41, 59, 0.5);
-  --surface-video: linear-gradient(to right, rgba(29, 78, 216, 0.15), rgba(30, 41, 59, 0.6));
-  --icon-bg: #334155;
 }
 
 @keyframes aura-ripple {
