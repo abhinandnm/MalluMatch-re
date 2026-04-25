@@ -482,3 +482,20 @@ footer {
     padding: 0 1rem;
   }
 }
+
+@media (max-width: 640px) {
+  .logo {
+    font-size: 1.5rem;
+    gap: 8px;
+  }
+  header {
+    padding: 0.75rem 1rem;
+  }
+  .tagline {
+    font-size: 0.8rem;
+  }
+  .user-count-badge {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+  }
+}
