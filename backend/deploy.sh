@@ -22,7 +22,7 @@ git reset --hard origin/main
 # Build frontend
 echo "Building Frontend..."
 cd $FRONTEND_DIR
-npm install
+npm install --legacy-peer-deps
 npm run build
 
 # Install backend dependencies and restart PM2
