@@ -14,9 +14,9 @@ export default function MobileHome() {
     const handleOnlineUsers = (data) => {
       setOnlineCount(typeof data === 'object' ? data.count : data);
     };
-    
+
     socket.on('online_users', handleOnlineUsers);
-    
+
     return () => {
       socket.off('online_users', handleOnlineUsers);
     };
@@ -29,14 +29,14 @@ export default function MobileHome() {
 
   return (
     <div className="mobile-home-container">
-      
+
       <div className="hero-section">
         {/* Matrix Earth Background - Desktop Only */}
-        <video 
-          className="hero-video-bg" 
-          autoPlay 
-          muted 
-          loop 
+        <video
+          className="hero-video-bg"
+          autoPlay
+          muted
+          loop
           playsInline
         >
           <source src="https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-the-earth-rotating-1611-large.mp4" type="video/mp4" />
@@ -44,8 +44,8 @@ export default function MobileHome() {
 
         <div className="hero-text">
           <div className="live-pill">
-             <span className="pulse-dot"></span>
-             <strong>{onlineCount.toLocaleString()}</strong> users online right now
+            <span className="pulse-dot"></span>
+            <strong>{onlineCount.toLocaleString()}</strong> users online right now
           </div>
           <h1>Kerala's Own <span className="text-gradient">Random Chat App</span></h1>
           <p className="subtitle">
@@ -56,13 +56,13 @@ export default function MobileHome() {
         <div className="mobile-action-card">
           <h3>Choose your experience</h3>
           <p className="action-desc">No registration required. Just jump right in.</p>
-          
+
           <div className="interest-input-container" style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
             <label htmlFor="interests" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#b3b3b3' }}>
               Add your interests (optional)
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               id="interests"
               placeholder="e.g. music, gaming, sports"
               value={interestsInput}
@@ -82,10 +82,10 @@ export default function MobileHome() {
               onBlur={(e) => e.target.style.borderColor = '#333'}
             />
             <p style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem', marginBottom: 0 }}>
-              Comma separated. Matches you with people who share an interest.
+              Add interests separated by commas to help match you with people who share similar interests.
             </p>
           </div>
-          
+
           <div className="action-buttons">
             <Link to="/chat" state={{ type: 'text', interests: interestsInput.split(',').map(i => i.trim().toLowerCase()).filter(i => i) }} className="premium-btn text-mode" style={{ textDecoration: 'none' }}>
               <div className="btn-icon">
@@ -96,7 +96,7 @@ export default function MobileHome() {
                 <span className="btn-sub">Lightning fast messaging</span>
               </div>
             </Link>
-            
+
             <Link to="/chat" state={{ type: 'video', interests: interestsInput.split(',').map(i => i.trim().toLowerCase()).filter(i => i) }} className="premium-btn video-mode" style={{ textDecoration: 'none' }}>
               <div className="btn-icon">
                 <Video size={24} />
@@ -107,9 +107,9 @@ export default function MobileHome() {
               </div>
             </Link>
           </div>
-          
+
           <div className="compliance-text">
-            By starting, you agree to our <a href="/terms">Terms of Service</a> & <a href="/privacy">Privacy Policy</a>. 
+            By starting, you agree to our <a href="/terms">Terms of Service</a> & <a href="/privacy">Privacy Policy</a>.
             <br />You must be <strong>18+</strong> to use this service.
           </div>
         </div>
@@ -123,25 +123,25 @@ export default function MobileHome() {
         <p style={{ marginBottom: '1.5rem', lineHeight: '1.6', fontSize: '1.1rem' }}>
           Enjoy crystal-clear <strong>random video chat</strong> or lightning-fast text messaging. No registration is required, meaning your identity is protected. Jump into a room and start exploring diverse cultures today.
         </p>
-        <h3 style={{ fontSize: '1.4rem', color: '#ffb347', marginTop: '1.5rem' }}>Start chatting now on Mallu Match ΓÇô free and anonymous!</h3>
+        <h3 style={{ fontSize: '1.4rem', color: '#ffb347', marginTop: '1.5rem' }}>Start chatting now on Mallu Match </h3>
       </div>
 
       <div className="features-section">
-         <div className="feature-item">
-            <div className="feature-icon"><Zap size={28} /></div>
-            <h4>Instant Matching</h4>
-            <p>Our intelligent queue system connects you to a partner in milliseconds, with zero latency routing.</p>
-         </div>
-         <div className="feature-item">
-            <div className="feature-icon"><Shield size={28} /></div>
-            <h4>Private & Secure</h4>
-            <p>Video and audio streams are fully peer-to-peer encrypted (WebRTC). We don't store your chat logs.</p>
-         </div>
-         <div className="feature-item">
-            <div className="feature-icon"><Users size={28} /></div>
-            <h4>Global Community</h4>
-            <p>With thousands of users online at any moment, you'll never run out of interesting people to meet.</p>
-         </div>
+        <div className="feature-item">
+          <div className="feature-icon"><Zap size={28} /></div>
+          <h4>Instant Matching</h4>
+          <p>Our intelligent queue system connects you to a partner in milliseconds, with zero latency routing.</p>
+        </div>
+        <div className="feature-item">
+          <div className="feature-icon"><Shield size={28} /></div>
+          <h4>Private & Secure</h4>
+          <p>Video and audio streams are protected with peer-to-peer encryption (WebRTC). Chat data is securely stored for up to 24 hours only for safety monitoring and is automatically deleted afterward</p>
+        </div>
+        <div className="feature-item">
+          <div className="feature-icon"><Users size={28} /></div>
+          <h4>Global Community</h4>
+          <p>With thousands of users online at any moment, you'll never run out of interesting people to meet.</p>
+        </div>
       </div>
 
       <AdBanner adSlot="1234567890" style={{ marginTop: '4rem' }} />
