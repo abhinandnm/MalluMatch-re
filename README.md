@@ -19,7 +19,7 @@ A fully functional, Omegle-style random video and text chat platform. Built usin
 1. **Start Backend Server**:
    ```bash
    cd backend
-   npm install
+   npm install 
    npm start
    ```
    The backend will run on `http://localhost:5000`.
