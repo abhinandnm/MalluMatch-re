@@ -1,76 +1,114 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maintenance</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-        }
+    <title>Website Maintenance</title>
 
-        .container {
-            max-width: 600px;
-            padding: 20px;
-        }
+```
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
 
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
+    body {
+        font-family: Arial, sans-serif;
+        background: #121212;
+        color: white;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
 
-        p {
-            font-size: 1.2rem;
-            color: #ccc;
-        }
+    .container {
+        max-width: 700px;
+        padding: 30px;
+    }
 
-        #countdown {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-top: 20px;
-            color: #4CAF50;
-        }
-    </style>
+    h1 {
+        font-size: 3rem;
+        margin-bottom: 15px;
+    }
+
+    p {
+        font-size: 1.2rem;
+        color: #cccccc;
+        margin-bottom: 10px;
+    }
+
+    #countdown {
+        margin-top: 25px;
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    .footer {
+        margin-top: 25px;
+        color: #888;
+        font-size: 0.95rem;
+    }
+</style>
+```
+
 </head>
 <body>
-    <div class="container">
-        <h1>🚧 Website Under Maintenance</h1>
-        <p>We're performing scheduled maintenance.</p>
-        <p>Please come back in:</p>
-        <div id="countdown">06:00:00</div>
-    </div>
 
-    <script>
-        let timeLeft = 6 * 60 * 60; // 6 hours in seconds
+<div class="container">
+    <h1>🚧 Website Under Maintenance</h1>
 
-        function updateCountdown() {
-            const hours = Math.floor(timeLeft / 3600);
-            const minutes = Math.floor((timeLeft % 3600) / 60);
-            const seconds = timeLeft % 60;
+```
+<p>We're currently performing scheduled maintenance.</p>
 
-            document.getElementById("countdown").textContent =
-                `${String(hours).padStart(2, "0")}:` +
-                `${String(minutes).padStart(2, "0")}:` +
-                `${String(seconds).padStart(2, "0")}`;
+<p>Expected return:</p>
+<p><strong>1 June 2026, 6:00 PM</strong></p>
 
-            if (timeLeft > 0) {
-                timeLeft--;
-            } else {
-                document.getElementById("countdown").textContent =
-                    "Maintenance Complete!";
-            }
+<div id="countdown">Loading...</div>
+
+<div class="footer">
+    Thank you for your patience.
+</div>
+```
+
+</div>
+
+<script>
+    const endTime = new Date("2026-06-01T18:00:00").getTime();
+
+    function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = endTime - now;
+
+        if (distance <= 0) {
+            location.reload();
+            return;
         }
 
-        updateCountdown();
-        setInterval(updateCountdown, 1000);
-    </script>
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor(
+            (distance % (1000 * 60 * 60 * 24)) /
+            (1000 * 60 * 60)
+        );
+        const minutes = Math.floor(
+            (distance % (1000 * 60 * 60)) /
+            (1000 * 60)
+        );
+        const seconds = Math.floor(
+            (distance % (1000 * 60)) /
+            1000
+        );
+
+        document.getElementById("countdown").innerHTML =
+            `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+</script>
+
 </body>
 </html>
