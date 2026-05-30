@@ -1,43 +1,76 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GHY85HL84X"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-GHY85HL84X');
-  </script>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description"
-    content="MalluMatch - Talk to strangers from Kerala! Random video and text chat connecting Malayalis worldwide. Safe, fun, and instant connections." />
-  <meta name="keywords"
-    content="MalluMatch, Malayalam chat, Kerala chat, talk to strangers, random video chat, Malayali chat, random chat Kerala" />
-  <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://mallu-match.vercel.app/" />
-  <!-- Open Graph (Facebook, WhatsApp, etc.) -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://mallu-match.vercel.app/" />
-  <meta property="og:title" content="Mallu Match – Kerala’s Random Chat App | Meet New People Instantly" />
-  <meta property="og:description"
-    content="Random video and text chat connecting Malayalis worldwide. Safe, fun, and instant connections." />
-  <meta property="og:site_name" content="MalluMatch" />
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Mallu Match – Kerala’s Random Chat App | Meet New People Instantly" />
-  <meta name="twitter:description" content="Random video and text chat connecting Malayalis worldwide." />
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6749230340776803" crossorigin="anonymous"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maintenance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
 
-  <title>Mallu Match – Kerala’s Random Chat App | Meet New People Instantly</title>
+        .container {
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 1.2rem;
+            color: #ccc;
+        }
+
+        #countdown {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #4CAF50;
+        }
+    </style>
 </head>
-
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+    <div class="container">
+        <h1>🚧 Website Under Maintenance</h1>
+        <p>We're performing scheduled maintenance.</p>
+        <p>Please come back in:</p>
+        <div id="countdown">06:00:00</div>
+    </div>
 
+    <script>
+        let timeLeft = 6 * 60 * 60; // 6 hours in seconds
+
+        function updateCountdown() {
+            const hours = Math.floor(timeLeft / 3600);
+            const minutes = Math.floor((timeLeft % 3600) / 60);
+            const seconds = timeLeft % 60;
+
+            document.getElementById("countdown").textContent =
+                `${String(hours).padStart(2, "0")}:` +
+                `${String(minutes).padStart(2, "0")}:` +
+                `${String(seconds).padStart(2, "0")}`;
+
+            if (timeLeft > 0) {
+                timeLeft--;
+            } else {
+                document.getElementById("countdown").textContent =
+                    "Maintenance Complete!";
+            }
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    </script>
+</body>
 </html>
