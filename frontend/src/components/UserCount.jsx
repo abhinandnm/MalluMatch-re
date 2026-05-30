@@ -22,7 +22,7 @@ export default function UserCount() {
     <div className="user-count-badge">
       <div className="pulse-dot"></div>
       <Users size={14} />
-      <span>{count.toLocaleString()} Online</span>
+      <span>{count.toLocaleString()} + Online</span>
     </div>
   );
 }
