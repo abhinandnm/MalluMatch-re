@@ -822,7 +822,7 @@ io.on('connection', (socket) => {
     if (!socket.rooms.has('admins')) return;
     const targetSocket = io.sockets.sockets.get(targetId);
     if (targetSocket) {
-      targetSocket.emit('kicked', { message: 'You were kicked by admin' });
+      targetSocket.emit('kicked', { message: 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.' });
       setTimeout(() => targetSocket.disconnect(), 500);
     }
   });
