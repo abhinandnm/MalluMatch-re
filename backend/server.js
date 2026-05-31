@@ -100,6 +100,18 @@ const reports = [];
 const safetyViolations = [];
 const ipConnections = new Map(); // IP -> count
 const tempBans = new Map(); // IP -> expiryTime
+const getActiveTempBans = () => {
+  const now = Date.now();
+  for (const [ip, expiry] of tempBans.entries()) {
+    if (now >= expiry) {
+      tempBans.delete(ip);
+    }
+  }
+  return Array.from(tempBans.entries()).map(([ip, expiry]) => ({ ip, expiry }));
+};
+const broadcastTempBans = () => {
+  io.to('admins').emit('update_temp_bans', getActiveTempBans());
+};
 const adminStrikes = new Map(); // IP -> failureCount
 const adminSessions = new Map(); // socketId -> IP
 
@@ -245,6 +257,7 @@ setInterval(() => {
        reports, 
        liveLogs, 
        bannedIPs: Array.from(bannedIPs),
+       tempBans: getActiveTempBans(),
        userCountSettings,
        safetyViolations,
        activeRooms: Array.from(matchMaker.activeRooms.entries()),
@@ -573,12 +586,22 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // 1.2 Link Block Detection
+    const linkRegex = /(https?:\/\/|ht+ps?:\/\/|www\.)[^\s]+/gi;
+    if (linkRegex.test(msg)) {
+      socket.emit('error', { message: 'Sharing links is not allowed in the chat.' });
+      return;
+    }
+
     // 1.5 Malicious Pattern Detection
     const ip = matchMaker.userIPs.get(socket.id);
     if (isMalicious(msg)) {
       console.warn(`Malicious pattern detected from ${socket.id} (${ip})`);
       const expiry = Date.now() + 30 * 60 * 1000; // 30 minutes ban
-      if (ip) tempBans.set(ip, expiry);
+      if (ip) {
+        tempBans.set(ip, expiry);
+        broadcastTempBans();
+      }
       
       socket.emit('error', { message: 'Malicious activity detected. You are temporarily banned.' });
       
@@ -668,6 +691,7 @@ io.on('connection', (socket) => {
         reports, 
         liveLogs, 
         bannedIPs: Array.from(bannedIPs),
+        tempBans: getActiveTempBans(),
         userCountSettings,
         safetyViolations,
         activeRooms: Array.from(matchMaker.activeRooms.entries()),
@@ -688,6 +712,7 @@ io.on('connection', (socket) => {
       if (strikes >= 5) {
         const banPeriod = 60 * 60 * 1000; // 1 hour ban
         tempBans.set(ip, Date.now() + banPeriod);
+        broadcastTempBans();
         console.error(`[SECURITY] IP ${ip} temporary banned for 1 hour after 5 failed admin attempts.`);
         socket.emit('error', { message: 'Too many failed attempts. You are temporarily banned from admin actions.' });
         adminStrikes.delete(ip);
@@ -790,6 +815,32 @@ io.on('connection', (socket) => {
     bannedIPs.delete(ip);
     // Notify all admins of the update
     io.to('admins').emit('update_banned_ips', Array.from(bannedIPs));
+  });
+
+  socket.on('admin_unban_temp', ({ ip }) => {
+    if (!socket.rooms.has('admins')) return;
+    tempBans.delete(ip);
+    broadcastTempBans();
+  });
+
+  socket.on('admin_perm_ban_temp', ({ ip }) => {
+    if (!socket.rooms.has('admins')) return;
+    tempBans.delete(ip);
+    bannedIPs.add(ip);
+    saveSettings();
+    broadcastTempBans();
+    io.to('admins').emit('update_banned_ips', Array.from(bannedIPs));
+    
+    // Disconnect any active connections with this IP
+    for (const [sId, userIp] of matchMaker.userIPs) {
+       if (userIp === ip) {
+          const s = io.sockets.sockets.get(sId);
+          if (s) {
+             s.emit('banned', { message: 'You were kicked by admin' });
+             setTimeout(() => s.disconnect(), 500);
+          }
+       }
+    }
   });
 
   socket.on('report_user', ({ screenshot, comment }) => {
