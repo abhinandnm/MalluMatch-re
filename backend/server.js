@@ -725,7 +725,7 @@ io.on('connection', (socket) => {
       const targetSocket = io.sockets.sockets.get(violation.userId);
       if (targetSocket) {
         targetSocket.emit('banned', { message: 'Your IP has been banned for safety violations.' });
-        targetSocket.disconnect();
+        setTimeout(() => targetSocket.disconnect(), 3000);
       }
     }
 
@@ -823,7 +823,7 @@ io.on('connection', (socket) => {
     const targetSocket = io.sockets.sockets.get(targetId);
     if (targetSocket) {
       targetSocket.emit('kicked', { message: 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.' });
-      setTimeout(() => targetSocket.disconnect(), 500);
+      setTimeout(() => targetSocket.disconnect(), 3000);
     }
   });
 
@@ -855,8 +855,8 @@ io.on('connection', (socket) => {
       
       const targetSocket = io.sockets.sockets.get(targetId);
       if (targetSocket) {
-      targetSocket.emit('banned', { message: 'You were kicked by admin' });
-      setTimeout(() => targetSocket.disconnect(), 500);
+      targetSocket.emit('banned', { message: 'You have been banned due to violation.' });
+      setTimeout(() => targetSocket.disconnect(), 3000);
     } else {
          for (const [sId, ip] of matchMaker.userIPs) {
             if (ip === ipToBan) {
