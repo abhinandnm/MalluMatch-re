@@ -903,6 +903,32 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('admin_warn_ip', ({ targetIP, message, password }) => {
+    if (password !== process.env.ADMIN_PASSWORD) return;
+    console.log(`[ADMIN] Warn IP request received for targetIP: ${targetIP}, message: ${message}`);
+    
+    if (!targetIP || !targetIP.trim() || !message || !message.trim()) {
+      socket.emit('admin_warn_ip_result', { success: false, message: 'Invalid IP or message' });
+      return;
+    }
+    
+    const ipToWarn = targetIP.trim();
+    const warnMsg = message.trim();
+    let warnedCount = 0;
+    
+    for (const [sId, ip] of matchMaker.userIPs) {
+      if (ip === ipToWarn) {
+        const targetSocket = io.sockets.sockets.get(sId);
+        if (targetSocket) {
+          targetSocket.emit('warn_alert', { message: warnMsg });
+          warnedCount++;
+        }
+      }
+    }
+    
+    socket.emit('admin_warn_ip_result', { success: true, warnedCount, ip: ipToWarn });
+  });
+
   socket.on('admin_terminate_room', ({ roomId }) => {
     if (!socket.rooms.has('admins')) return;
     const room = matchMaker.activeRooms.get(roomId);

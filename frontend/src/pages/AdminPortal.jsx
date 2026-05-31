@@ -50,6 +50,9 @@ export default function AdminPortal() {
     const [adminRoomMessages, setAdminRoomMessages] = useState({});
     const [pushMessage, setPushMessage] = useState('');
     const [pushStatus, setPushStatus] = useState('');
+    const [warnIp, setWarnIp] = useState('');
+    const [warnIpMessage, setWarnIpMessage] = useState('');
+    const [warnIpStatus, setWarnIpStatus] = useState('');
 
 
    const [currentTime, setCurrentTime] = useState(Date.now());
@@ -133,6 +136,18 @@ export default function AdminPortal() {
          setAdminSessions(sessions);
       });
 
+      socket.on('admin_warn_ip_result', ({ success, warnedCount, ip, message }) => {
+         if (success) {
+            setWarnIpStatus(`Warned ${warnedCount} socket(s) on IP: ${ip}`);
+            setWarnIp('');
+            setWarnIpMessage('');
+            setTimeout(() => setWarnIpStatus(''), 5000);
+         } else {
+            setWarnIpStatus(`Failed: ${message || 'Unknown error'}`);
+            setTimeout(() => setWarnIpStatus(''), 5000);
+         }
+      });
+
       return () => {
          socket.off('admin_auth_success');
          socket.off('new_report');
@@ -146,6 +161,7 @@ export default function AdminPortal() {
          socket.off('past_sessions_update');
          socket.off('real_online_users');
          socket.off('admin_sessions_update');
+         socket.off('admin_warn_ip_result');
       };
    }, []);
 
@@ -309,6 +325,12 @@ export default function AdminPortal() {
       } catch (err) {
          setPushStatus('Error: ' + err.message);
       }
+   };
+
+   const handleWarnIp = (e) => {
+      e.preventDefault();
+      if (!warnIp.trim() || !warnIpMessage.trim()) return;
+      socket.emit('admin_warn_ip', { targetIP: warnIp.trim(), message: warnIpMessage.trim(), password });
    };
 
    const handleDownloadSessions = () => {
@@ -541,6 +563,53 @@ export default function AdminPortal() {
                   </div>
                </div>
             )}
+
+            <div className="ban-management">
+                <h3>Warn User by IP</h3>
+                <form onSubmit={handleWarnIp} className="admin-form compact">
+                   <div className="input-field" style={{ marginBottom: '8px' }}>
+                      <input
+                         type="text"
+                         placeholder="IP Address to warn..."
+                         value={warnIp}
+                         onChange={(e) => setWarnIp(e.target.value)}
+                         style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            fontSize: '0.85rem',
+                            background: '#0f172a',
+                            border: '1px solid #334155',
+                            borderRadius: '4px',
+                            color: '#fff',
+                            outline: 'none'
+                         }}
+                      />
+                   </div>
+                   <div className="input-field" style={{ marginBottom: '8px' }}>
+                      <textarea
+                         placeholder="Warning message..."
+                         value={warnIpMessage}
+                         onChange={(e) => setWarnIpMessage(e.target.value)}
+                         rows="2"
+                         style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            fontSize: '0.85rem',
+                            background: '#0f172a',
+                            border: '1px solid #334155',
+                            borderRadius: '4px',
+                            color: '#fff',
+                            outline: 'none',
+                            resize: 'vertical'
+                         }}
+                      ></textarea>
+                   </div>
+                   <button type="submit" className="blast-btn" style={{ background: '#fbbf24', color: '#000', width: '100%', fontWeight: 'bold' }}>
+                      Send Warning
+                   </button>
+                   {warnIpStatus && <p className="status-mini" style={{ color: '#fbbf24', marginTop: '6px' }}>{warnIpStatus}</p>}
+                </form>
+             </div>
 
             <form className="admin-form compact" onSubmit={handleBroadcast}>
                <div className="input-field">
