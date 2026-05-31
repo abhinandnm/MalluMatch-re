@@ -571,6 +571,15 @@ export default function ChatRoom() {
   const sendMessage = (e) => {
     e.preventDefault();
     if (inputMsg.trim() && isConnected) {
+      // Link Block Detection
+      const linkRegex = /(https?:\/\/|ht+ps?:\/\/|www\.)[^\s]+/gi;
+      if (linkRegex.test(inputMsg)) {
+         playSfx(alertSound);
+         setMessages((prev) => [...prev, { sender: 'system', text: 'Sharing links is not allowed in the chat.', isError: true }]);
+         setInputMsg('');
+         return;
+      }
+
       const filteredMsg = cleanMessage(inputMsg);
       const msgObj = { sender: 'me', text: filteredMsg };
       setMessages((prev) => [...prev, msgObj]);
