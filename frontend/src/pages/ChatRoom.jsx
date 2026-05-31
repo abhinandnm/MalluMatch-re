@@ -163,9 +163,12 @@ export default function ChatRoom() {
       console.error("❌ Fatal media error:", err);
       setStatus('Camera access denied. Text mode only.');
     } finally {
+      // AI safety checks disabled by user request
+      /*
       if (chatType === 'video' && !nsfwModelRef.current) {
         loadSafetyModel();
       }
+      */
       if (socket.connected) {
         console.log("🚀 Emitting join_queue...");
         socket.emit('join_queue', { type: chatType, interests: userInterests });
@@ -240,9 +243,12 @@ export default function ChatRoom() {
   };
 
   useEffect(() => {
+    // AI safety checks disabled by user request
+    /*
     if (isConnected && chatType === 'video' && nsfwModelRef.current) {
       checkIntervalRef.current = setInterval(checkVideoSafety, 1500);
     }
+    */
     return () => {
       if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
     };
