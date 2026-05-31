@@ -820,10 +820,17 @@ io.on('connection', (socket) => {
 
   socket.on('admin_kick', ({ targetId }) => {
     if (!socket.rooms.has('admins')) return;
+    console.log(`[ADMIN] Kick request received for targetId: ${targetId}`);
     const targetSocket = io.sockets.sockets.get(targetId);
     if (targetSocket) {
+      console.log(`[ADMIN] Found target socket for kick. Emitting "kicked" event.`);
       targetSocket.emit('kicked', { message: 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.' });
-      setTimeout(() => targetSocket.disconnect(), 3000);
+      setTimeout(() => {
+        console.log(`[ADMIN] Disconnecting kicked socket: ${targetId}`);
+        targetSocket.disconnect();
+      }, 3000);
+    } else {
+      console.warn(`[ADMIN] Kick failed: Target socket ${targetId} not found.`);
     }
   });
 
@@ -853,15 +860,24 @@ io.on('connection', (socket) => {
       bannedIPs.add(ipToBan);
       saveSettings();
       
+      console.log(`[ADMIN] Ban request for target IP: ${ipToBan}, targetId: ${targetId}`);
       const targetSocket = io.sockets.sockets.get(targetId);
       if (targetSocket) {
-      targetSocket.emit('banned', { message: 'You have been banned due to violation.' });
-      setTimeout(() => targetSocket.disconnect(), 3000);
-    } else {
+        console.log(`[ADMIN] Found target socket for ban. Emitting "banned" event.`);
+        targetSocket.emit('banned', { message: 'You have been banned due to violation.' });
+        setTimeout(() => {
+          console.log(`[ADMIN] Disconnecting banned socket: ${targetId}`);
+          targetSocket.disconnect();
+        }, 3000);
+      } else {
+         console.log(`[ADMIN] Target socket for ban not found. Disconnecting all sockets with IP: ${ipToBan}`);
          for (const [sId, ip] of matchMaker.userIPs) {
             if (ip === ipToBan) {
                const s = io.sockets.sockets.get(sId);
-               if (s) s.disconnect();
+               if (s) {
+                  console.log(`[ADMIN] Disconnecting socket ${sId} on IP ${ipToBan}`);
+                  s.disconnect();
+               }
             }
          }
       }

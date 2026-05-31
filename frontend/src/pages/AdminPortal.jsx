@@ -168,10 +168,12 @@ export default function AdminPortal() {
    };
 
    const handleKick = (targetId) => {
+      console.log("Client handleKick called for targetId:", targetId);
       socket.emit('admin_kick', { targetId });
    };
 
    const handleBan = (targetIP, targetId) => {
+      console.log("Client handleBan called for targetIP:", targetIP, "targetId:", targetId);
       socket.emit('admin_ban', { targetIP, targetId });
    };
 

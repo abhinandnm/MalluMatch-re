@@ -1,4 +1,4 @@
-# MalluMatch
+# OpenChat
 
 A fully functional, Omegle-style random video and text chat platform. Built using React, Vite, Node.js, Express, Socket.IO, and WebRTC.
 
@@ -6,9 +6,9 @@ A fully functional, Omegle-style random video and text chat platform. Built usin
 
 - **Instant Matchmaking**: Connects strangers via random queue logic across 'Video' and 'Text' chat modes.
 - **WebRTC Video**: End-to-end encrypted peer-to-peer video streaming.
-- **Socket.io Signaling**: Fast, real-time message exchange and presence updates (user count, connect/disconnect, 'next stranger').
-- **Omegle Clone UI**: Clean, minimal, classic UI styled after the original Omegle chat experience.
-- **Safety First**: Features an age-gate popup on entry and report feature placeholders.
+- **Socket.io Signaling**: Fast, real-time message exchange and presence updates.
+- **Premium Matte Design**: Clean, minimal, modern UI with smooth gradients and glassmorphism.
+- **Responsive Layout**: Works seamlessly on both desktop and mobile browsers.
 
 ## Requirements
 
