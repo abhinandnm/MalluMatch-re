@@ -1,0 +1,8 @@
+{
+  "userCountSettings": {
+    "customCount": 100,
+    "mode": "realtime"
+  },
+  "currentAnnouncement": "",
+  "bannedIPs": []
+}
