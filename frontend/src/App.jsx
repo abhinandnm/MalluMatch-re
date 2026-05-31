@@ -72,11 +72,13 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
 
   useEffect(() => {
     const handleKicked = ({ message }) => {
+      console.log("Client received kicked event:", message);
       alert(message || 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.');
       navigate('/');
     };
 
     const handleBanned = ({ message }) => {
+      console.log("Client received banned event:", message);
       alert(message || 'Your IP has been banned.');
       navigate('/');
     };
