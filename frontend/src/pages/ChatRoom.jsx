@@ -403,18 +403,6 @@ export default function ChatRoom() {
         setIsStrangerTyping(false);
       });
 
-      socket.on('kicked', ({ message }) => {
-        playSfx(alertSound);
-        alert(message || 'You have been kicked by an admin.');
-        navigate('/');
-      });
-
-      socket.on('banned', ({ message }) => {
-        playSfx(alertSound);
-        alert(message || 'Your IP has been banned for violating community guidelines.');
-        navigate('/');
-      });
-
       socket.on('error', ({ message }) => {
         playSfx(alertSound);
         // Show as a system message in the chat
@@ -442,8 +430,6 @@ export default function ChatRoom() {
       socket.off('chat_message');
       socket.off('stranger_typing');
       socket.off('stranger_stop_typing');
-      socket.off('kicked');
-      socket.off('banned');
       if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
     };
     }, [chatType, userInterests, setupMedia]);
