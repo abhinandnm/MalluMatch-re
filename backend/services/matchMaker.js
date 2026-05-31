@@ -173,6 +173,21 @@ class MatchMaker {
     this.pastSessions.unshift({ roomId, ...room });
     if (this.pastSessions.length > 500) this.pastSessions.length = 500;
 
+    const mongoose = require('mongoose');
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+      const Session = require('../models/Session');
+      new Session({
+        roomId,
+        user1: room.user1,
+        user2: room.user2,
+        type: room.type,
+        startTime: room.startTime,
+        endTime: room.endTime,
+        chatLogs: room.chatLogs,
+        snapshots: room.snapshots
+      }).save().catch(err => console.error('Error saving session to MongoDB:', err));
+    }
+
     this.activeRooms.delete(roomId);
     this.userRooms.delete(partnerId);
     this.userRooms.delete(socketId);
