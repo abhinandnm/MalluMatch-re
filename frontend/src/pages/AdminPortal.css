@@ -636,6 +636,27 @@
   background: #ef4444;
 }
 
+.mini-action-btn.warn {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid #d97706;
+}
+
+.mini-action-btn.warn:hover {
+  background: #fbbf24;
+  color: #000;
+}
+
+.action-warn {
+  color: #fbbf24 !important;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.action-warn:hover {
+  text-decoration: underline;
+}
+
 .snapshot-wrapper {
   position: relative;
   width: 100%;

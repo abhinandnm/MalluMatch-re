@@ -179,10 +179,18 @@ export default function AdminPortal() {
       setStatus('Announcement cleared!');
    };
 
-   const handleKick = (targetId) => {
-      console.log("Client handleKick called for targetId:", targetId);
-      socket.emit('admin_kick', { targetId });
-   };
+    const handleKick = (targetId) => {
+       console.log("Client handleKick called for targetId:", targetId);
+       socket.emit('admin_kick', { targetId });
+    };
+
+    const handleWarn = (targetId) => {
+       const msg = window.prompt("Enter warning/alert message for this user:");
+       if (msg && msg.trim()) {
+          console.log("Client handleWarn called for targetId:", targetId, "message:", msg.trim());
+          socket.emit('admin_warn_user', { targetId, message: msg.trim(), password });
+       }
+    };
 
    const handleBan = (targetIP, targetId) => {
       console.log("Client handleBan called for targetIP:", targetIP, "targetId:", targetId);
@@ -682,11 +690,19 @@ export default function AdminPortal() {
                         </div>
 
                         <div className="session-card-actions" onClick={(e) => e.stopPropagation()}>
-                           <button onClick={() => handleKick(room.user1)} className="action-kick">[ KICK USER {room.user1.substring(0, 4)} ]</button>
-                           <button onClick={() => handleKick(room.user2)} className="action-kick">[ KICK USER {room.user2.substring(0, 4)} ]</button>
-                           {sessionView === 'active' && (
-                               <button onClick={() => handleTerminateRoom(room.id)} className="action-terminate">[ TERMINATE ROOM ]</button>
-                           )}
+                            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '4px' }}>
+                               <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button onClick={() => handleWarn(room.user1)} className="action-warn" style={{ flex: 1 }}>[ WARN USER {room.user1.substring(0, 4)} ]</button>
+                                  <button onClick={() => handleKick(room.user1)} className="action-kick" style={{ flex: 1 }}>[ KICK ]</button>
+                               </div>
+                               <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button onClick={() => handleWarn(room.user2)} className="action-warn" style={{ flex: 1 }}>[ WARN USER {room.user2.substring(0, 4)} ]</button>
+                                  <button onClick={() => handleKick(room.user2)} className="action-kick" style={{ flex: 1 }}>[ KICK ]</button>
+                               </div>
+                               {sessionView === 'active' && (
+                                   <button onClick={() => handleTerminateRoom(room.id)} className="action-terminate" style={{ width: '100%', marginTop: '4px' }}>[ TERMINATE ROOM ]</button>
+                               )}
+                            </div>
                         </div>
 
                         {sessionView === 'active' && (
@@ -810,6 +826,7 @@ export default function AdminPortal() {
                            <span className="log-text">{l.text}</span>
                         </div>
                         <div className="log-actions">
+                           <button onClick={() => handleWarn(l.sender)} className="mini-action-btn warn" title="Warn User">Warn</button>
                            <button onClick={() => handleKick(l.sender)} className="mini-action-btn kick" title="Kick User">Kick</button>
                            <button onClick={() => handleBan(l.ip, l.sender)} className="mini-action-btn ban" title="Ban IP">Ban</button>
                         </div>

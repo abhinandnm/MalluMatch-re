@@ -834,6 +834,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('admin_warn_user', ({ targetId, message, password }) => {
+    if (password !== process.env.ADMIN_PASSWORD) return;
+    console.log(`[ADMIN] Warn request received for targetId: ${targetId}, message: ${message}`);
+    const targetSocket = io.sockets.sockets.get(targetId);
+    if (targetSocket) {
+      console.log(`[ADMIN] Found target socket for warning. Emitting "warn_alert" event.`);
+      targetSocket.emit('warn_alert', { message });
+    } else {
+      console.warn(`[ADMIN] Warn failed: Target socket ${targetId} not found.`);
+    }
+  });
+
   socket.on('admin_terminate_room', ({ roomId }) => {
     if (!socket.rooms.has('admins')) return;
     const room = matchMaker.activeRooms.get(roomId);

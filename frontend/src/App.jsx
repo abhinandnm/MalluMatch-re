@@ -83,12 +83,19 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
       navigate('/');
     };
 
+    const handleWarnAlert = ({ message }) => {
+      console.log("Client received warn_alert event:", message);
+      alert(message);
+    };
+
     socket.on('kicked', handleKicked);
     socket.on('banned', handleBanned);
+    socket.on('warn_alert', handleWarnAlert);
 
     return () => {
       socket.off('kicked', handleKicked);
       socket.off('banned', handleBanned);
+      socket.off('warn_alert', handleWarnAlert);
     };
   }, [navigate]);
 
