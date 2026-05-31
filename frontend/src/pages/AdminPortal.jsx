@@ -33,6 +33,8 @@ export default function AdminPortal() {
    const [reports, setReports] = useState([]);
    const [logs, setLogs] = useState([]);
    const [bannedIPs, setBannedIPs] = useState([]);
+   const [tempBans, setTempBans] = useState([]);
+   const [manualBanIp, setManualBanIp] = useState('');
    const [safetyViolations, setSafetyViolations] = useState([]);
    const [userCountSettings, setUserCountSettings] = useState({ customCount: 100, mode: 'realtime' });
    const [tempCustomCount, setTempCustomCount] = useState(100);
@@ -63,11 +65,12 @@ export default function AdminPortal() {
    }, []);
 
    useEffect(() => {
-      socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, userCountSettings, safetyViolations, activeRooms, pastSessions, onlineUsers, adminSessions }) => {
+      socket.on('admin_auth_success', ({ reports, liveLogs, bannedIPs, tempBans, userCountSettings, safetyViolations, activeRooms, pastSessions, onlineUsers, adminSessions }) => {
          setIsAuth(true);
          setReports(reports);
          setLogs(liveLogs);
          setBannedIPs(bannedIPs || []);
+         setTempBans(tempBans || []);
          setSafetyViolations(safetyViolations || []);
          setActiveRooms(activeRooms || []);
          setPastSessions(pastSessions || []);
@@ -98,6 +101,10 @@ export default function AdminPortal() {
 
       socket.on('update_banned_ips', (updatedList) => {
          setBannedIPs(updatedList);
+      });
+
+      socket.on('update_temp_bans', (updatedList) => {
+         setTempBans(updatedList);
       });
 
       socket.on('update_user_count_settings', (settings) => {
@@ -131,6 +138,7 @@ export default function AdminPortal() {
          socket.off('new_report');
          socket.off('live_chat_log');
          socket.off('update_banned_ips');
+         socket.off('update_temp_bans');
          socket.off('update_user_count_settings');
          socket.off('new_safety_alert');
          socket.off('update_safety_violations');
@@ -199,6 +207,22 @@ export default function AdminPortal() {
 
    const handleUnban = (ip) => {
       socket.emit('admin_unban', { ip });
+   };
+
+   const handleUnbanTemp = (ip) => {
+      socket.emit('admin_unban_temp', { ip });
+   };
+
+   const handlePermBanTemp = (ip) => {
+      socket.emit('admin_perm_ban_temp', { ip });
+   };
+
+   const handleManualBan = (e) => {
+      e.preventDefault();
+      if (manualBanIp && manualBanIp.trim()) {
+         socket.emit('admin_ban', { targetIP: manualBanIp.trim() });
+         setManualBanIp('');
+      }
    };
 
    const handleUpdateUserCount = (newSettings) => {
@@ -564,17 +588,71 @@ export default function AdminPortal() {
             </div>
 
             <div className="ban-management">
-               <h3>Banned IPs</h3>
-               <div className="ban-list">
-                  {bannedIPs.length === 0 && <p className="empty-msg">No banned IPs.</p>}
-                  {bannedIPs.map(ip => (
-                     <div key={ip} className="ban-item">
-                        <span>{ip}</span>
-                        <button onClick={() => handleUnban(ip)} className="unban-btn">Unban</button>
-                     </div>
-                  ))}
-               </div>
-            </div>
+                <h3>Banned IPs</h3>
+                <form onSubmit={handleManualBan} style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+                   <input
+                      type="text"
+                      placeholder="IP Address to ban..."
+                      value={manualBanIp}
+                      onChange={(e) => setManualBanIp(e.target.value)}
+                      style={{
+                         flex: 1,
+                         padding: '6px 10px',
+                         fontSize: '0.8rem',
+                         background: '#0f172a',
+                         border: '1px solid #334155',
+                         borderRadius: '4px',
+                         color: '#fff',
+                         outline: 'none'
+                      }}
+                   />
+                   <button type="submit" style={{
+                      padding: '6px 12px',
+                      fontSize: '0.8rem',
+                      background: '#ef4444',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s'
+                   }}>Ban</button>
+                </form>
+                <div className="ban-list">
+                   {bannedIPs.length === 0 && <p className="empty-msg">No banned IPs.</p>}
+                   {bannedIPs.map(ip => (
+                      <div key={ip} className="ban-item">
+                         <span>{ip}</span>
+                         <button onClick={() => handleUnban(ip)} className="unban-btn">Unban</button>
+                      </div>
+                   ))}
+                </div>
+             </div>
+
+             <div className="ban-management" style={{ borderTop: 'none', paddingTop: 0 }}>
+                <h3>Temporarily Banned (Attackers)</h3>
+                <div className="ban-list">
+                   {tempBans.length === 0 && <p className="empty-msg">No temporarily banned IPs.</p>}
+                   {tempBans.map(item => {
+                      const timeLeft = Math.max(0, Math.round((item.expiry - currentTime) / 1000));
+                      const minutes = Math.floor(timeLeft / 60);
+                      const seconds = timeLeft % 60;
+                      const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                      return (
+                         <div key={item.ip} className="ban-item" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '4px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '6px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                               <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{item.ip}</span>
+                               <span style={{ fontSize: '0.75rem', color: '#f87171' }}>{timeStr} left</span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
+                               <button onClick={() => handleUnbanTemp(item.ip)} className="unban-btn" style={{ flex: 1, fontSize: '0.7rem', padding: '2px 4px', background: '#3b82f6', color: '#fff', borderRadius: '4px' }}>Unban</button>
+                               <button onClick={() => handlePermBanTemp(item.ip)} className="unban-btn" style={{ flex: 1, fontSize: '0.7rem', padding: '2px 4px', background: '#ef4444', color: '#fff', borderRadius: '4px' }}>Perm Ban</button>
+                            </div>
+                         </div>
+                      );
+                   })}
+                </div>
+             </div>
 
             <div className="push-notification-control">
                <h3><BellRing size={16} /> Push Notification</h3>
