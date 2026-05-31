@@ -115,6 +115,12 @@ const broadcastTempBans = () => {
 const adminStrikes = new Map(); // IP -> failureCount
 const adminSessions = new Map(); // socketId -> IP
 
+const BANNED_MESSAGE = `Your IP address has been banned for violating community guidelines.
+
+⚔️ Take a few days off and come back when you're ready to follow the rules and be respectful to other users.
+
+⚠️ Warning: Any further violation after your ban expires may result in a permanent lifetime ban with no further warnings.`;
+
 const chatLogsPath = path.join(__dirname, 'chat_logs.json');
 const sessionsPath = path.join(__dirname, 'session_history.json');
 const subscriptionsPath = path.join(__dirname, 'subscriptions.json');
@@ -749,7 +755,7 @@ io.on('connection', (socket) => {
       bannedIPs.add(violation.userIP);
       const targetSocket = io.sockets.sockets.get(violation.userId);
       if (targetSocket) {
-        targetSocket.emit('banned', { message: 'Your IP has been banned for safety violations.' });
+        targetSocket.emit('banned', { message: BANNED_MESSAGE });
         setTimeout(() => targetSocket.disconnect(), 3000);
       }
     }
@@ -836,7 +842,7 @@ io.on('connection', (socket) => {
        if (userIp === ip) {
           const s = io.sockets.sockets.get(sId);
           if (s) {
-             s.emit('banned', { message: 'You were kicked by admin' });
+             s.emit('banned', { message: BANNED_MESSAGE });
              setTimeout(() => s.disconnect(), 500);
           }
        }
@@ -927,7 +933,7 @@ io.on('connection', (socket) => {
       const targetSocket = io.sockets.sockets.get(targetId);
       if (targetSocket) {
         console.log(`[ADMIN] Found target socket for ban. Emitting "banned" event.`);
-        targetSocket.emit('banned', { message: 'You have been banned due to violation.' });
+        targetSocket.emit('banned', { message: BANNED_MESSAGE });
         setTimeout(() => {
           console.log(`[ADMIN] Disconnecting banned socket: ${targetId}`);
           targetSocket.disconnect();

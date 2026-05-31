@@ -22,7 +22,7 @@ class MatchMaker {
 
 ⚔️ Take a few days off and come back when you're ready to follow the rules and be respectful to other users.
 
-⚠️ Warning: Any further violation after your ban expires may result in a permanent lifetime ban with no further warnings..` });
+⚠️ Warning: Any further violation after your ban expires may result in a permanent lifetime ban with no further warnings.` });
       socket.disconnect();
       return;
     }
