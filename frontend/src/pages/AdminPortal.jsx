@@ -789,6 +789,10 @@ export default function AdminPortal() {
                         <div className="log-main">
                            <span className="log-time">[{formatIST(l.timestamp)}]</span>
                            <span className="log-room">Room {l.roomId?.substring(5, 11) || '???'}:</span>
+                           <span className="log-sender" title={l.sender}>
+                              {l.sender ? (l.sender.length > 8 ? l.sender.substring(0, 8) + '...' : l.sender) : 'System'}:
+                           </span>
+                           <span className="log-ip">({l.ip || 'no IP'})</span>
                            <span className="log-text">{l.text}</span>
                         </div>
                         <div className="log-actions">
