@@ -69,23 +69,31 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
   const navigate = useNavigate();
   const isChatPage = location.pathname === '/chat';
   const isAdminPage = location.pathname.startsWith('/admin-portal');
+  const [moderationModal, setModerationModal] = useState(null);
 
   useEffect(() => {
     const handleKicked = ({ message }) => {
       console.log("Client received kicked event:", message);
-      alert(message || 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.');
-      navigate('/');
+      setModerationModal({
+         type: 'kick',
+         message: message || 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.'
+      });
     };
 
     const handleBanned = ({ message }) => {
       console.log("Client received banned event:", message);
-      alert(message || 'Your IP has been banned.');
-      navigate('/');
+      setModerationModal({
+         type: 'ban',
+         message: message || 'Your IP has been banned.'
+      });
     };
 
     const handleWarnAlert = ({ message }) => {
       console.log("Client received warn_alert event:", message);
-      alert(message);
+      setModerationModal({
+         type: 'warn',
+         message: message
+      });
     };
 
     socket.on('kicked', handleKicked);
@@ -101,6 +109,29 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
 
   return (
     <div className={`app-container ${(!ageVerified && !isAdminPage) ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>
+      {moderationModal && (
+        <div className="global-alert-overlay">
+          <div className={`global-alert-modal ${moderationModal.type}`}>
+            <h3>
+              {moderationModal.type === 'warn' && '⚠️ SYSTEM WARNING'}
+              {moderationModal.type === 'kick' && '🚫 MODERATION KICK'}
+              {moderationModal.type === 'ban' && '🔒 PERMANENT BAN'}
+            </h3>
+            <p>{moderationModal.message}</p>
+            <button 
+              className="global-alert-btn" 
+              onClick={() => {
+                if (moderationModal.type === 'kick' || moderationModal.type === 'ban') {
+                  navigate('/');
+                }
+                setModerationModal(null);
+              }}
+            >
+              Acknowledge
+            </button>
+          </div>
+        </div>
+      )}
       <div className="network-bg"></div>
       {!ageVerified && !isAdminPage && <AgeVerification onVerify={() => setAgeVerified(true)} />}
       {ageVerified && !isAdminPage && <NotificationPrompt />}

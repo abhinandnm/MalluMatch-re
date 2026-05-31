@@ -464,6 +464,119 @@ footer {
   }
 }
 
+/* Custom Global Modal Alert styling */
+.global-alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fade-in 0.2s ease-out;
+}
+
+.global-alert-modal {
+  background: rgba(30, 41, 59, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  width: 90%;
+  max-width: 480px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: modal-zoom-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.global-alert-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+.global-alert-modal.kick::before {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.global-alert-modal.ban::before {
+  background: linear-gradient(90deg, #b91c1c, #ef4444);
+}
+
+.global-alert-modal.warn::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.global-alert-modal h3 {
+  font-size: 1.4rem;
+  font-family: var(--font-heading);
+  margin-bottom: 0.25rem;
+  font-weight: 800;
+}
+
+.global-alert-modal.warn h3 { color: #fbbf24; }
+.global-alert-modal.kick h3 { color: #f97316; }
+.global-alert-modal.ban h3 { color: #ef4444; }
+
+.global-alert-modal p {
+  color: #e2e8f0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.global-alert-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.global-alert-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.global-alert-modal.warn .global-alert-btn {
+  background: #fbbf24;
+  color: #000;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+}
+
+.global-alert-modal.warn .global-alert-btn:hover {
+  background: #f59e0b;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-zoom-in {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 @media (max-width: 640px) {
   .logo {
     font-size: 1.5rem;
