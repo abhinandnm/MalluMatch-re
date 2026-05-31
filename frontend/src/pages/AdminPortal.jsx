@@ -155,6 +155,18 @@ export default function AdminPortal() {
       socket.emit('admin_auth', { password });
    };
 
+   useEffect(() => {
+      const handleConnect = () => {
+         if (password) {
+            socket.emit('admin_auth', { password });
+         }
+      };
+      socket.on('connect', handleConnect);
+      return () => {
+         socket.off('connect', handleConnect);
+      };
+   }, [password]);
+
    const handleBroadcast = (e) => {
       e.preventDefault();
       socket.emit('admin_broadcast', { message, password });
