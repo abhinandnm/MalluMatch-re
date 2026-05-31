@@ -727,6 +727,8 @@
 
 .log-time { color: #64748b; }
 .log-room { color: #3b82f6; font-weight: bold; }
+.log-main .log-sender { color: #cbd5e1; font-weight: 600; }
+.log-ip { color: #f59e0b; font-size: 0.8rem; font-weight: 500; font-family: monospace; }
 .log-text { color: #f8fafc; }
 
 .status-mini {
