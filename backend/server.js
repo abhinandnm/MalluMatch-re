@@ -12,6 +12,7 @@ const { cleanMessage } = require('./filter');
 const { isMalicious } = require('./utils/security');
 const bcrypt = require('bcryptjs');
 const webpush = require('web-push');
+const mongoose = require('mongoose');
 
 webpush.setVapidDetails(
   'mailto:mallumatch.auth@gmail.com',
@@ -121,51 +122,117 @@ const getISTString = (date) => {
   });
 };
 
-// Initial load of logs
-try {
-  const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
-  
-  if (fs.existsSync(chatLogsPath)) {
-    liveLogs = JSON.parse(fs.readFileSync(chatLogsPath, 'utf8'));
-    liveLogs = liveLogs.filter(log => log.timestamp > twentyFourHoursAgo);
-  }
-  
-  if (fs.existsSync(sessionsPath)) {
-    pastSessions = JSON.parse(fs.readFileSync(sessionsPath, 'utf8'));
-    pastSessions = pastSessions.filter(session => (session.endTime || session.startTime) > twentyFourHoursAgo);
-  }
+// MongoDB integration with backward compatible fallback
+let isMongoConnected = false;
+if (process.env.MONGODB_URI) {
+  console.log('Connecting to MongoDB...');
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(async () => {
+      console.log('Connected to MongoDB Atlas successfully!');
+      isMongoConnected = true;
+      
+      try {
+        const ChatLog = require('./models/ChatLog');
+        const Session = require('./models/Session');
+        const User = require('./models/User');
 
+        const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+        // Load chats of past 24 hours
+        const mongoChats = await ChatLog.find({ timestamp: { $gt: new Date(twentyFourHoursAgo) } }).lean();
+        liveLogs = mongoChats.map(c => ({
+          roomId: c.roomId,
+          sender: c.sender,
+          ip: c.ip,
+          text: c.text,
+          time: c.time,
+          timestamp: c.timestamp ? c.timestamp.getTime() : Date.now()
+        }));
+
+        // Load sessions of past 24 hours
+        const mongoSessions = await Session.find({ createdAt: { $gt: new Date(twentyFourHoursAgo) } }).sort({ startTime: -1 }).lean();
+        pastSessions = mongoSessions.map(s => ({
+          roomId: s.roomId,
+          user1: s.user1,
+          user2: s.user2,
+          type: s.type,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          chatLogs: s.chatLogs,
+          snapshots: s.snapshots
+        }));
+
+        // Load all registered users into memory for fast login searches
+        const mongoUsers = await User.find({}).lean();
+        users = mongoUsers.map(u => ({
+          username: u.username,
+          email: u.email,
+          password: u.password
+        }));
+
+        console.log(`Successfully seeded ${liveLogs.length} chats, ${pastSessions.length} sessions, and ${users.length} users from MongoDB.`);
+      } catch (err) {
+        console.error('Error seeding data from MongoDB:', err);
+      }
+    })
+    .catch(err => {
+      console.error('Failed to connect to MongoDB. Using local files instead:', err);
+      loadLocalHistory();
+    });
+} else {
+  console.warn('MONGODB_URI is not set. Using local JSON files database.');
+  loadLocalHistory();
+}
+
+function loadLocalHistory() {
+  try {
+    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+    
+    if (fs.existsSync(chatLogsPath)) {
+      liveLogs = JSON.parse(fs.readFileSync(chatLogsPath, 'utf8'));
+      liveLogs = liveLogs.filter(log => log.timestamp > twentyFourHoursAgo);
+    }
+    
+    if (fs.existsSync(sessionsPath)) {
+      pastSessions = JSON.parse(fs.readFileSync(sessionsPath, 'utf8'));
+      pastSessions = pastSessions.filter(session => (session.endTime || session.startTime) > twentyFourHoursAgo);
+    }
+  } catch (err) {
+    console.error('Error loading local history files:', err);
+  }
+}
+
+// Always load push subscriptions from disk (or fallback)
+try {
   if (fs.existsSync(subscriptionsPath)) {
     pushSubscriptions = JSON.parse(fs.readFileSync(subscriptionsPath, 'utf8'));
   }
 } catch (err) {
-  console.error('Error loading history files:', err);
+  console.error('Error loading subscriptions file:', err);
 }
-
 
 const saveHistory = () => {
   try {
-    fs.writeFileSync(chatLogsPath, JSON.stringify(liveLogs, null, 2));
-    fs.writeFileSync(sessionsPath, JSON.stringify(pastSessions, null, 2));
     fs.writeFileSync(subscriptionsPath, JSON.stringify(pushSubscriptions, null, 2));
+    if (!isMongoConnected) {
+      fs.writeFileSync(chatLogsPath, JSON.stringify(liveLogs, null, 2));
+      fs.writeFileSync(sessionsPath, JSON.stringify(pastSessions, null, 2));
+    }
   } catch (err) {
     console.error('Error saving history files:', err);
   }
 };
 
-
-// Periodic cleanup every hour
+// Periodic cleanup every hour (only clean in-memory representations, MongoDB does TTL automatically)
 setInterval(() => {
   const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
   
-  // Clean live logs
+  // Clean live logs in memory
   const initialLogsLength = liveLogs.length;
   liveLogs = liveLogs.filter(log => log.timestamp > twentyFourHoursAgo);
   
-  // Clean past sessions
+  // Clean past sessions in memory
   const initialSessionsLength = pastSessions.length;
-  // Note: pastSessions contains room objects which have startTime
-  // We clean up sessions that ended more than 24 hours ago, or if we don't have endTime, use startTime
   pastSessions = pastSessions.filter(session => {
      const sessionTime = session.endTime || session.startTime;
      return sessionTime > twentyFourHoursAgo;
@@ -318,7 +385,14 @@ app.post('/api/verify-otp', (req, res) => {
     email: email 
   };
   users.push(newUser);
-  saveUsers();
+  
+  if (isMongoConnected) {
+    const User = require('./models/User');
+    new User(newUser).save().catch(err => console.error('Error saving user to MongoDB:', err));
+  } else {
+    saveUsers();
+  }
+  
   pendingOTPs.delete(email);
 
   res.json({ success: true, message: 'Account verified and created successfully' });
@@ -529,7 +603,20 @@ io.on('connection', (socket) => {
         timestamp: Date.now()
       };
       liveLogs.push(logEntry);
-      saveHistory();
+      
+      if (isMongoConnected) {
+        const ChatLog = require('./models/ChatLog');
+        new ChatLog({
+          roomId,
+          sender: socket.id,
+          ip: logEntry.ip,
+          text: cleanedMsg,
+          time: logEntry.time,
+          timestamp: new Date(logEntry.timestamp)
+        }).save().catch(err => console.error('Error saving message to MongoDB:', err));
+      } else {
+        saveHistory();
+      }
 
       const room = matchMaker.activeRooms.get(roomId);
       if (room) {
