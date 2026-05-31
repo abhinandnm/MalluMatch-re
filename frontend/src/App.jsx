@@ -113,9 +113,9 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
         <div className="global-alert-overlay">
           <div className={`global-alert-modal ${moderationModal.type}`}>
             <h3>
-              {moderationModal.type === 'warn' && '⚠️ SYSTEM WARNING'}
+              {moderationModal.type === 'warn' && '⚠️ WARNING'}
               {moderationModal.type === 'kick' && '🚫 MODERATION KICK'}
-              {moderationModal.type === 'ban' && '🔒 PERMANENT BAN'}
+              {moderationModal.type === 'ban' && '⛔ ACCOUNT BANNED'}
             </h3>
             <p>{moderationModal.message}</p>
             <button 
