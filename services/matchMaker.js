@@ -18,11 +18,11 @@ class MatchMaker {
   addUser(socket, type, interests = []) {
     const ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
     if (this.bannedIPs.has(ip)) {
-      socket.emit('banned', { message: 'Your IP address has been banned for violating community guidelines.
+      socket.emit('banned', { message: `Your IP address has been banned for violating community guidelines.
 
 ⚔️ Take a few days off and come back when you're ready to follow the rules and be respectful to other users.
 
-⚠️ Warning: Any further violation after your ban expires may result in a permanent lifetime ban with no further warnings..' });
+⚠️ Warning: Any further violation after your ban expires may result in a permanent lifetime ban with no further warnings..` });
       socket.disconnect();
       return;
     }
