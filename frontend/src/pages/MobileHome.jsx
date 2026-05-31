@@ -97,7 +97,15 @@ export default function MobileHome() {
               </div>
             </Link>
 
-            <Link to="/chat" state={{ type: 'video', interests: interestsInput.split(',').map(i => i.trim().toLowerCase()).filter(i => i) }} className="premium-btn video-mode" style={{ textDecoration: 'none' }}>
+            <Link
+              to="#"
+              onClick={(e) => {
+                e.preventDefault();
+                alert("Video chats are disabled temporarily. Please use text chat.");
+              }}
+              className="premium-btn video-mode"
+              style={{ textDecoration: 'none' }}
+            >
               <div className="btn-icon">
                 <Video size={24} />
               </div>
