@@ -1,5 +1,5 @@
 // Triggering fresh build for rollback verification
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -66,8 +66,29 @@ const AppWrapper = () => {
 
 const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isChatPage = location.pathname === '/chat';
   const isAdminPage = location.pathname.startsWith('/admin-portal');
+
+  useEffect(() => {
+    const handleKicked = ({ message }) => {
+      alert(message || 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.');
+      navigate('/');
+    };
+
+    const handleBanned = ({ message }) => {
+      alert(message || 'Your IP has been banned.');
+      navigate('/');
+    };
+
+    socket.on('kicked', handleKicked);
+    socket.on('banned', handleBanned);
+
+    return () => {
+      socket.off('kicked', handleKicked);
+      socket.off('banned', handleBanned);
+    };
+  }, [navigate]);
 
   return (
     <div className={`app-container ${(!ageVerified && !isAdminPage) ? 'blur-sm' : ''} ${announcement ? 'has-announcement' : ''}`}>
