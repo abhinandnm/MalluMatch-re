@@ -1,114 +1,54 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Maintenance</title>
-
-
-<style>
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: Arial, sans-serif;
-        background: #121212;
-        color: white;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-    }
-
-    .container {
-        max-width: 700px;
-        padding: 30px;
-    }
-
-    h1 {
-        font-size: 3rem;
-        margin-bottom: 15px;
-    }
-
-    p {
-        font-size: 1.2rem;
-        color: #cccccc;
-        margin-bottom: 10px;
-    }
-
-    #countdown {
-        margin-top: 25px;
-        font-size: 2.5rem;
-        font-weight: bold;
-    }
-
-    .footer {
-        margin-top: 25px;
-        color: #888;
-        font-size: 0.95rem;
-    }
-</style>
-
-
-</head>
-<body>
-
-<div class="container">
-    <h1> Website Under Maintenance</h1>
-
-
-<p>We're currently performing scheduled maintenance.</p>
-
-<p>Expected return:</p>
-<p><strong>1 June 2026, 6:00 PM</strong></p>
-
-<div id="countdown">Loading...</div>
-
-<div class="footer">
-    Thank you for your patience.
-</div>
-
-
-</div>
-
-<script>
-    const endTime = new Date("2026-06-01T18:00:00").getTime();
-
-    function updateCountdown() {
-        const now = new Date().getTime();
-        const distance = endTime - now;
-
-        if (distance <= 0) {
-            location.reload();
-            return;
+    <title>Temporary Maintenance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: #f5f5f5;
+            text-align: center;
         }
 
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor(
-            (distance % (1000 * 60 * 60 * 24)) /
-            (1000 * 60 * 60)
-        );
-        const minutes = Math.floor(
-            (distance % (1000 * 60 * 60)) /
-            (1000 * 60)
-        );
-        const seconds = Math.floor(
-            (distance % (1000 * 60)) /
-            1000
-        );
+        .container {
+            max-width: 600px;
+            padding: 30px;
+        }
 
-        document.getElementById("countdown").innerHTML =
-            `${days}d ${hours}h ${minutes}m ${seconds}s`;
-    }
+        h1 {
+            color: #333;
+        }
 
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-</script>
+        p {
+            color: #666;
+            line-height: 1.6;
+        }
 
+        .emoji {
+            font-size: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emoji">🚧</div>
+        <h1>We'll Be Back Soon!</h1>
+        <p>
+            Our platform is currently undergoing maintenance and infrastructure upgrades.
+        </p>
+        <p>
+            The service may be temporarily unavailable, but we're working hard to bring it back
+            as soon as possible with improvements and a better experience.
+        </p>
+        <p>
+            Thank you for your patience and support. 
+        </p>
+    </div>
 </body>
 </html>
