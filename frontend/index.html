@@ -1,54 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temporary Maintenance</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: #f5f5f5;
-            text-align: center;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Temporary Maintenance</title>
 
-        .container {
-            max-width: 600px;
-            padding: 30px;
-        }
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-        h1 {
-            color: #333;
-        }
+body{
+    font-family:Arial,sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    background:#f5f5f5;
+    text-align:center;
+}
 
-        p {
-            color: #666;
-            line-height: 1.6;
-        }
+.container{
+    max-width:600px;
+    padding:40px;
+}
 
-        .emoji {
-            font-size: 50px;
-        }
-    </style>
+.emoji{
+    font-size:70px;
+    margin-bottom:20px;
+}
+
+h1{
+    color:#333;
+    margin-bottom:20px;
+}
+
+p{
+    color:#666;
+    line-height:1.7;
+    margin-bottom:15px;
+}
+
+.game-btn{
+    display:inline-block;
+    margin-top:20px;
+    padding:14px 28px;
+    background:#4CAF50;
+    color:white;
+    text-decoration:none;
+    border-radius:10px;
+    font-size:18px;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+.game-btn:hover{
+    background:#43a047;
+    transform:translateY(-2px);
+}
+
+.note{
+    margin-top:25px;
+    font-size:14px;
+    color:#888;
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="emoji">🚧</div>
-        <h1>We'll Be Back Soon!</h1>
-        <p>
-            Our platform is currently undergoing maintenance and infrastructure upgrades.
-        </p>
-        <p>
-            The service may be temporarily unavailable, but we're working hard to bring it back
-            as soon as possible with improvements and a better experience.
-        </p>
-        <p>
-            Thank you for your patience and support. ❤️
-        </p>
-    </div>
+
+<div class="container">
+
+    <div class="emoji">🚧</div>
+
+    <h1>We'll Be Back Soon!</h1>
+
+    <p>
+        Our platform is currently undergoing maintenance and infrastructure upgrades.
+    </p>
+
+    <p>
+        The service may be temporarily unavailable, but we're working hard to bring it back
+        as soon as possible with improvements and a better experience.
+    </p>
+
+    <a href="dino.html" target="_blank" class="game-btn">
+        🎮 Play Dino Game While You Wait
+    </a>
+
+    <p class="note">
+        Bored while waiting? Enjoy a quick game!
+    </p>
+
+    <p>
+        Thank you for your patience and support ❤️
+    </p>
+
+</div>
+
 </body>
 </html>
