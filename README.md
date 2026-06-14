@@ -16,6 +16,7 @@ A fully functional, Omegle-style random video and text chat platform. Built usin
 
 ## Running Locally
 
+ 
 1. **Start Backend Server**:
    ```bash
    cd backend
