@@ -209,10 +209,6 @@ export default function DesktopHome() {
         </div>
 
         <div className="action-card-wrapper">
-          <div className="floating-badge top-left">
-            <span className="badge-icon-star">✦</span> Always Free
-          </div>
-
           <div className="action-card">
             <div className="card-header">
               <h3>Choose Your Experience</h3>
@@ -278,10 +274,6 @@ export default function DesktopHome() {
               By starting you agree to our <a href="/terms">Terms</a> & <a href="/privacy">Privacy Policy</a>
               <br />Must be <strong>18+</strong> to use this platform
             </div>
-          </div>
-
-          <div className="floating-badge bottom-left">
-            <Shield size={14} /> Anonymous
           </div>
         </div>
       </div>
