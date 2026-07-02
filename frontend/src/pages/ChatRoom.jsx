@@ -678,8 +678,8 @@ export default function ChatRoom() {
               <AlertTriangle size={24} color="#facc15" />
               <span>WARNING</span>
             </div>
-            <p>Any abuse or inappropriate behavior will be recorded and may be shared with our official platforms and authorities.</p>
-            <p className="strict">Strict action will be taken.</p>
+            <p>Any abuse or inappropriate behavior will be recorded and may be shared with our official platforms.</p>
+            <p className="strict"></p>
             <p>You are not anonymous.</p>
             <p className="behave">Behave.</p>
           </div>
