@@ -667,208 +667,259 @@ export default function ChatRoom() {
   }, [remoteStream]); // Only re-assign if the stream itself changes
 
   return (
-    <div className={`desktop-ui-container ${chatType === 'video' ? 'video-mode' : 'text-mode'}`}>
+    <div className={`google-chat-container ${chatType === 'video' ? 'video-mode' : 'text-mode'}`}>
       <ConnectionAura active={auraActive} />
 
-      {/* Left Sidebar */}
-      <div className="left-sidebar">
-        <div className="sidebar-panel warning-panel">
-          <div className="warning-content">
-            <div className="warning-icon">
-              <AlertTriangle size={24} color="#facc15" />
-              <span>WARNING</span>
-            </div>
-            <p>Any abuse or inappropriate behavior will be recorded and may be shared with our official platforms.</p>
-            <p className="strict"></p>
-            <p>You are not anonymous.</p>
-            <p className="behave">Behave.</p>
-          </div>
+      {/* Left Sidebar: Google Chat Workspace Drawer */}
+      <aside className="gchat-sidebar">
+        <div className="gchat-sidebar-top">
+          <button 
+            className="gchat-new-chat-btn" 
+            onClick={() => { playSfx(tapSound); handleNext(); }}
+            title="Find new match"
+          >
+            <UserSearch size={18} />
+            <span>Next Stranger</span>
+          </button>
         </div>
 
-        <div className="sidebar-panel session-panel">
-          <div className="session-info">
-            <p className="session-label">Session Duration</p>
-            <p className="session-value">{formatSessionTime(sessionTime)}</p>
-            <div className="moderation-messages">
-
+        <div className="gchat-sidebar-section">
+          <div className="gchat-section-label">ACTIVE CONVERSATION</div>
+          <div className="gchat-room-card active">
+            <div className="gchat-room-avatar">
+              <span>S</span>
+              <div className={`gchat-status-dot ${isConnected ? 'online' : 'connecting'}`}></div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Stage */}
-      <div className="main-stage">
-        <div className="video-container-primary">
-          {!isConnected ? (
-            <div className="stranger-placeholder">
-              <div className="premium-loader-container">
-                <div className="pulse-ring ring-1"></div>
-                <div className="pulse-ring ring-2"></div>
-                <div className="pulse-ring ring-3"></div>
-                <div className="scanner-line"></div>
-                <div className="glow-circle-inner premium">
-                  <span className="funny-message-text">
-                    {searchingText}
-                  </span>
-                </div>
+            <div className="gchat-room-info">
+              <div className="gchat-room-name-row">
+                <span className="gchat-room-title">Stranger</span>
+                <span className="gchat-room-time">{formatSessionTime(sessionTime)}</span>
               </div>
-            </div>
-          ) : chatType === 'text' ? (
-            <div className="text-chat-active-overlay">
-              <h1 className="text-chat-title">Text Chat Active</h1>
-              <p className="text-chat-subtitle">
-                {sharedInterests.length > 0 
-                  ? `You both like: ${sharedInterests.join(', ')}` 
-                  : strangerInterests.length > 0 
-                    ? `Stranger is interested in: ${strangerInterests.join(', ')}`
-                    : status}
+              <p className="gchat-room-preview">
+                {isConnected ? (messages.length > 0 ? messages[messages.length - 1].text : "Connected • Say hi!") : status}
               </p>
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="remote-video hidden"
-                style={{ display: 'none' }}
-              ></video>
             </div>
-          ) : (
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              className="remote-video"
-            ></video>
-          )}
-
-          {/* Interest Matching Badge for Video Chat Overlay (or generic overlay) */}
-          {isConnected && chatType === 'video' && sharedInterests.length > 0 && (
-            <div className="interest-match-badge" style={{
-              position: 'absolute',
-              top: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              backgroundColor: 'rgba(255, 179, 71, 0.9)',
-              color: '#000',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              fontWeight: 'bold',
-              zIndex: 10,
-              boxShadow: '0 4px 15px rgba(255, 179, 71, 0.3)',
-              fontSize: '0.95rem'
-            }}>
-              🎯 {sharedInterests.length > 0 
-                ? `Both interested in: ${sharedInterests.join(', ')}`
-                : `Stranger likes: ${strangerInterests.join(', ')}`}
-            </div>
-          )}
-
-          <div className="video-overlay-top-right" style={{ display: 'none' }}>
-            <button className="mute-btn" title="Toggle Audio">
-              <div className="mic-icon-cross">/</div>
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-            </button>
           </div>
+        </div>
 
-          <div className="video-overlay-bottom-left">
-
+        {/* Interests Section */}
+        <div className="gchat-sidebar-section">
+          <div className="gchat-section-label">YOUR INTERESTS</div>
+          <div className="gchat-tags-wrap">
+            {userInterests.length > 0 ? (
+              userInterests.map((interest, idx) => (
+                <span key={idx} className="gchat-tag-pill">#{interest}</span>
+              ))
+            ) : (
+              <span className="gchat-no-tags">No specific topics selected</span>
+            )}
           </div>
+        </div>
 
-          {/* User Cam Overlay */}
-          <div className="user-cam-overlay">
-            <div className="user-video-wrapper">
+        {/* Video Mode Preview Tile */}
+        {chatType === 'video' && (
+          <div className="gchat-video-preview-panel">
+            <div className="gchat-section-label">YOUR VIDEO</div>
+            <div className="gchat-local-cam-wrapper">
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
-                className={`local-video filter-${selectedFilter} ${safetyViolation ? 'blur-heavy' : ''}`}
+                className={`gchat-local-cam filter-${selectedFilter} ${safetyViolation ? 'blur-heavy' : ''}`}
               ></video>
-              <div className="overlay-mic-status" style={{ display: 'none' }}>
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="#ff4444" strokeWidth="2" fill="none"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom Safety & Guidelines Card */}
+        <div className="gchat-sidebar-footer">
+          <div className="gchat-guideline-card">
+            <Shield size={16} className="gchat-shield-icon" />
+            <div>
+              <strong>18+ Anonymous Chat</strong>
+              <p>Be respectful. Inappropriate behavior is strictly prohibited.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Google Chat Stream Area */}
+      <main className="gchat-main">
+        {/* Top Google Chat Header */}
+        <header className="gchat-header">
+          <div className="gchat-header-left">
+            <div className="gchat-header-avatar">
+              <span>S</span>
+              <div className={`gchat-header-dot ${isConnected ? 'online' : 'connecting'}`}></div>
+            </div>
+            <div className="gchat-header-details">
+              <div className="gchat-header-name-row">
+                <h2>Stranger</h2>
+                <span className={`gchat-status-text ${isConnected ? 'online' : 'connecting'}`}>
+                  {isConnected ? "Active now" : "Connecting..."}
+                </span>
+              </div>
+              <div className="gchat-header-meta">
+                {sharedInterests.length > 0 ? (
+                  <span className="gchat-matched-badge">🎯 Both like: {sharedInterests.join(', ')}</span>
+                ) : strangerInterests.length > 0 ? (
+                  <span className="gchat-matched-badge">Stranger likes: {strangerInterests.join(', ')}</span>
+                ) : (
+                  <span className="gchat-topic-badge">1:1 Direct Message</span>
+                )}
               </div>
             </div>
-
           </div>
-        </div>
-      </div>
 
-      {/* Bottom Control Bar */}
-      <div className="bottom-navbar">
-        <div className="nav-left">
-          <div className="digital-clock">
-            <span className="time">{currentTime}</span>
+          <div className="gchat-header-right">
+            <div className="gchat-timer-badge">
+              <span>⏱ {formatSessionTime(sessionTime)}</span>
+            </div>
+
+            <button 
+              className="gchat-action-btn primary" 
+              onClick={() => { playSfx(tapSound); handleNext(); }}
+              title="Next match"
+            >
+              <UserSearch size={16} />
+              <span>Next</span>
+            </button>
+
+            {chatType === 'video' && (
+              <button 
+                className="gchat-icon-btn" 
+                onClick={() => setShowFilters(!showFilters)} 
+                title="Filters"
+              >
+                <Wand2 size={18} />
+              </button>
+            )}
+
+            <button 
+              className="gchat-icon-btn danger" 
+              onClick={() => { playSfx(tapSound); reportUser(); }}
+              title="Report user"
+            >
+              <Shield size={18} />
+            </button>
+
+            <button 
+              className="gchat-icon-btn leave" 
+              onClick={() => { playSfx(tapSound); handleHome(); }}
+              title="Leave chat"
+            >
+              <LogOut size={18} />
+            </button>
           </div>
-        </div>
+        </header>
 
-        <div className="nav-center">
-          <button className="nav-circle-btn btn-new-match" onClick={() => { playSfx(tapSound); handleNext(); }} title="New Match">
-            <UserSearch size={24} />
-          </button>
-
-          <button className="nav-circle-btn btn-filters" onClick={() => setShowFilters(!showFilters)} title="Filters">
-            <Wand2 size={24} />
-          </button>
-
-          <button className="nav-circle-btn btn-report" onClick={() => { playSfx(tapSound); reportUser(); }} title="Report User">
-            <Shield size={24} />
-          </button>
-
-          <button 
-            className={`nav-circle-btn btn-chat ${showChat ? 'active' : ''}`} 
-            onClick={() => { playSfx(tapSound); setShowChat(!showChat); }} 
-            title="Toggle Chat"
-          >
-            <MessageSquare size={24} />
-          </button>
-
-          <button className="nav-circle-btn btn-home" onClick={() => { playSfx(tapSound); handleHome(); }} title="Back Home">
-            <LogOut size={24} />
-          </button>
-        </div>
-
-        <div className="nav-right">
-          {/* Empty right section to maintain flex balance */}
-        </div>
-      </div>
-
-      {/* Floating Chat Sidebar (Conditional) */}
-      {showChat && (
-        <div className="floating-chat-sidebar">
-          <div className="chat-header">
-            <span>Stranger Chat</span>
-            <button className="close-chat" onClick={() => setShowChat(false)}>×</button>
+        {/* Remote Video Container for Video Mode */}
+        {chatType === 'video' && (
+          <div className="gchat-remote-video-container">
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              className="gchat-remote-video"
+            ></video>
           </div>
-          <div className="chat-body" ref={chatboxRef}>
-            <div className="status-msg">{status}</div>
-            {messages.map((m, i) => (
-              <div key={i} className={`message-bubble ${m.sender === 'me' ? 'me' : m.sender === 'system' ? 'system' : 'stranger'}`}>
-                <div>{m.text}</div>
+        )}
+
+        {/* Google Chat Messages Thread */}
+        <div className="gchat-messages-scroll" ref={chatboxRef}>
+          {/* Centered Date Separator */}
+          <div className="gchat-date-separator">
+            <span>Today • Instant Match Session</span>
+          </div>
+
+          {!isConnected ? (
+            <div className="gchat-searching-card">
+              <div className="gchat-spinner-ring">
+                <div className="gchat-spinner-dot blue"></div>
+                <div className="gchat-spinner-dot red"></div>
+                <div className="gchat-spinner-dot yellow"></div>
+                <div className="gchat-spinner-dot green"></div>
               </div>
-            ))}
-            {isStrangerTyping && (
-              <div className="message-bubble stranger typing-indicator">
-                <div className="typing-dots">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+              <h3>Finding a match...</h3>
+              <p className="gchat-searching-prompt">{searchingText}</p>
+              <button 
+                className="gchat-skip-btn" 
+                onClick={() => { playSfx(tapSound); handleNext(); }}
+              >
+                Skip / Search Again
+              </button>
+            </div>
+          ) : (
+            <div className="gchat-welcome-banner">
+              <div className="gchat-welcome-avatar">S</div>
+              <h3>You're chatting with a random Stranger</h3>
+              <p>Say hello! Messages in this session are private and deleted upon leaving.</p>
+            </div>
+          )}
+
+          {/* Message Bubbles */}
+          {messages.map((m, idx) => (
+            <div key={idx} className={`gchat-message-row ${m.sender === 'me' ? 'me' : m.sender === 'system' ? 'system' : 'stranger'}`}>
+              {m.sender !== 'system' && (
+                <div className={`gchat-msg-avatar ${m.sender === 'me' ? 'me' : 'stranger'}`}>
+                  {m.sender === 'me' ? 'You' : 'S'}
+                </div>
+              )}
+              <div className="gchat-msg-content-block">
+                {m.sender !== 'system' && (
+                  <div className="gchat-msg-header">
+                    <span className="gchat-msg-author">{m.sender === 'me' ? 'You' : 'Stranger'}</span>
+                  </div>
+                )}
+                <div className={`gchat-msg-bubble ${m.sender}`}>
+                  {m.text}
                 </div>
               </div>
-            )}
-          </div>
-          <div className="chat-footer">
+            </div>
+          ))}
+
+          {isStrangerTyping && (
+            <div className="gchat-message-row stranger">
+              <div className="gchat-msg-avatar stranger">S</div>
+              <div className="gchat-msg-content-block">
+                <div className="gchat-msg-bubble stranger typing">
+                  <div className="gchat-typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Google Chat Bottom Input Composer */}
+        <div className="gchat-composer-area">
+          <div className="gchat-composer-box">
             <input 
               type="text" 
-              placeholder="Type message..." 
+              placeholder={isConnected ? "Message Stranger..." : "Waiting for stranger to connect..."}
               value={inputMsg}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
+              disabled={!isConnected}
             />
-            <button onClick={(e) => sendMessage(e)} disabled={!isConnected || !inputMsg.trim()}>
+            <button 
+              className="gchat-send-btn"
+              onClick={(e) => sendMessage(e)} 
+              disabled={!isConnected || !inputMsg.trim()}
+              title="Send message (Enter)"
+            >
               <Send size={18} />
             </button>
           </div>
+          <div className="gchat-composer-footer-text">
+            <span>Press <strong>Enter</strong> to send • Click <strong>Next</strong> to switch stranger anytime</span>
+          </div>
         </div>
-      )}
+      </main>
 
       {/* Filter Menu Overlay */}
       {showFilters && (

@@ -15,7 +15,7 @@ export default function AgeVerification({ onVerify }) {
           <strong>18+ Only:</strong> By entering, you confirm that you are at least 18 years old and agree to our terms of service!.
         </p>
         <div className="button-group">
-          <button 
+          <button
             className="btn btn-primary"
             onClick={() => {
               setIsOpen(false);

@@ -12,6 +12,7 @@ import AdminPortal from './pages/AdminPortal';
 import AgeVerification from './components/AgeVerification';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import NotificationPrompt from './components/NotificationPrompt';
+import ThreeBackground from './components/ThreeBackground';
 
 import Article1 from './pages/blog/Article1';
 import Article2 from './pages/blog/Article2';
@@ -75,24 +76,24 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
     const handleKicked = ({ message }) => {
       console.log("Client received kicked event:", message);
       setModerationModal({
-         type: 'kick',
-         message: message || 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.'
+        type: 'kick',
+        message: message || 'You have been kicked out due to violation. Repeated violations lead to a permanent ban.'
       });
     };
 
     const handleBanned = ({ message }) => {
       console.log("Client received banned event:", message);
       setModerationModal({
-         type: 'ban',
-         message: message || 'Your IP has been banned.'
+        type: 'ban',
+        message: message || 'Your IP has been banned.'
       });
     };
 
     const handleWarnAlert = ({ message }) => {
       console.log("Client received warn_alert event:", message);
       setModerationModal({
-         type: 'warn',
-         message: message
+        type: 'warn',
+        message: message
       });
     };
 
@@ -118,8 +119,8 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
               {moderationModal.type === 'ban' && '⛔ ACCOUNT BANNED'}
             </h3>
             <p>{moderationModal.message}</p>
-            <button 
-              className="global-alert-btn" 
+            <button
+              className="global-alert-btn"
               onClick={() => {
                 if (moderationModal.type === 'kick' || moderationModal.type === 'ban') {
                   navigate('/');
@@ -132,12 +133,11 @@ const AppContent = ({ ageVerified, setAgeVerified, announcement, setAnnouncement
           </div>
         </div>
       )}
-      <div className="network-bg"></div>
+      {/* <ThreeBackground /> Removed to allow the new background image to show */}
       {!ageVerified && !isAdminPage && <AgeVerification onVerify={() => setAgeVerified(true)} />}
-      {ageVerified && !isAdminPage && <NotificationPrompt />}
-      <Navbar />
+      {!isAdminPage && <Navbar />}
 
-      <main className={`main-content ${isChatPage ? 'no-padding' : ''}`}>
+      <main className={`main-content ${(isChatPage || location.pathname === '/') ? 'no-padding' : ''}`}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/chat" element={<ChatRoom />} />
